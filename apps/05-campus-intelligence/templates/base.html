@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='components-advanced.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='fixes.css') }}">
+    <!-- EduSense shared navy theme (additive) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='theme-navy.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
 <body class="dashboard-body">
@@ -74,6 +76,7 @@ if (localStorage.getItem('dark_mode') === 'true') document.body.classList.add('d
 </div>
 
 <script src="{{ url_for('static', filename='shared.js') }}"></script>
+<script src="{{ url_for('static', filename='risk-filter.js') }}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
 {% block extra_js %}{% endblock %}
 

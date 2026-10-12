@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Student Login - EduSense</title>
+<link rel="stylesheet" href="campus.css">
+<style>
+.loginwrap{min-height:100vh;display:grid;place-items:center;padding:20px}
+.logincard{background:#fff;border:1px solid #edf0f6;border-radius:20px;box-shadow:0 4px 24px rgba(16,24,40,.08);padding:30px;width:min(440px,94vw)}
+.logincard .logo{width:52px;height:52px;border-radius:14px;background:#2563eb;color:#fff;font-weight:700;font-size:22px;display:grid;place-items:center;margin-bottom:10px}
+.logincard h1{margin:0;font-size:20px}
+.logincard p{color:#6b7280;font-size:13px;margin:6px 0 8px}
+.field{text-align:left;margin:10px 0}
+.field label{display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:5px}
+.field input{width:100%;border:1px solid #e2e8f2;border-radius:10px;padding:10px 12px;font-size:14px;outline:none}
+.field input:focus{border-color:#2563eb}
+.err{display:none;background:#fee2e2;color:#b91c1c;border-radius:10px;font-size:12px;font-weight:600;padding:9px;margin:10px 0}
+.bigbtn{width:100%;border:0;border-radius:12px;background:#2563eb;color:#fff;font-size:15px;font-weight:700;padding:12px;cursor:pointer;margin-top:12px}
+.bigbtn:hover{background:#1d4ed8}
+.backlink{display:inline-block;margin-top:14px;color:#2563eb;font-size:13px;font-weight:600;text-decoration:none}
+.demonote{margin-top:12px;font-size:11px;color:#9aa3b5;text-align:center}
+</style>
+</head>
+<body data-page="login">
+<div class="loginwrap"><div class="logincard">
+  <div class="logo">🎒</div>
+  <h1>Student Login</h1>
+  <p>Use your school mail ID, roll number and password</p>
+  <div class="err" id="err">Please fill all three fields correctly.</div>
+  <form id="f" novalidate>
+    <div class="field"><label for="mail">Mail ID</label><input id="mail" type="email" placeholder="you@school.edu" autocomplete="email"></div>
+    <div class="field"><label for="roll">Roll Number</label><input id="roll" placeholder="e.g. 2026CSE014" autocomplete="off"></div>
+    <div class="field"><label for="pw">Password</label><input id="pw" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="bigbtn" type="submit">Login as Student</button>
+  </form>
+  <div style="text-align:center"><a class="backlink" href="login.html">← Choose a different role</a></div>
+  <p class="demonote">Demo only — real check happens against the student register later.</p>
+</div></div>
+<script>
+document.getElementById('f').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var mail = document.getElementById('mail').value.trim();
+  var roll = document.getElementById('roll').value.trim();
+  var pw = document.getElementById('pw').value;
+  var ok = /.+@.+\..+/.test(mail) && roll.length > 0 && pw.length > 0;
+  document.getElementById('err').style.display = ok ? 'none' : 'block';
+  if (!ok) return;
+  try {
+    localStorage.setItem('campus-logged', '1');
+    localStorage.setItem('campus-role', 'student');
+    localStorage.setItem('campus-user', roll.toUpperCase());
+  } catch (ex) {}
+  location.href = 'index.html';
+});
+</script>
+</body>
+</html>
