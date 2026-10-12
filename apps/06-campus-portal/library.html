@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Library - EduSense</title>
+<link rel="stylesheet" href="campus.css">
+</head>
+<body data-page="library">
+<div class="shell">
+  <nav class="side" id="side" aria-label="Primary">
+    <div class="profile"><span class="pfp">--</span><b><span data-profile-name>Staff</span><small data-profile-sub>Admin · staff login</small></b></div>
+
+    <a href="index.html" data-nav="dashboard"><i>▦</i>Dashboard</a>
+    <a href="students.html" data-nav="students"><i>◉</i>Students</a>
+    <a href="attendance.html" data-nav="attendance"><i>◷</i>Attendance</a>
+    <small class="sec">Academics</small>
+    <a href="lms.html" data-nav="lms"><i>▤</i>Courses</a>
+    <a href="analytics.html" data-nav="analytics"><i>◩</i>Grades</a>
+    <a href="library.html" data-nav="library"><i>▧</i>Library</a>
+    <small class="sec">System</small>
+    <a href="access.html" data-nav="access" data-for="admin hod"><i>⬣</i>Roles</a>
+    <a href="settings.html" data-nav="settings" data-for="admin"><i>⚙</i>Settings</a>
+    <div class="foot">Static layout · plug data in <b>Settings</b></div>
+  </nav>
+  <div class="main">
+    <div class="topbar">
+      <button class="btn" id="menuBtn">☰</button>
+      <div><h1>Library</h1><p class="day">Catalog and due dates</p></div>
+      <div class="searchbar"><input type="search" placeholder="Search books…" aria-label="Search books"></div>
+    </div>
+    <section class="card" data-for="student">
+      <div class="cardhead"><h3>My Borrowed Books</h3></div>
+      <div class="empty" data-slot="my-books"><b>No books issued</b><span>Your issued books with due dates appear here</span></div>
+    </section>
+    <div class="cols2">
+      <section class="card"><div class="cardhead"><h3>Catalog</h3></div>
+        <div class="empty" data-slot="library-catalog"><b>No titles yet</b><span>Book rows with availability appear after import</span></div></section>
+      <section class="card" data-for="admin hod"><div class="cardhead"><h3>Due This Week</h3></div>
+        <div class="empty" data-slot="library-dues"><b>No dues</b><span>Issued books with due dates appear here</span></div></section>
+    </div>
+    <footer><a href="index.html" style="color:#2563eb">← Dashboard</a> · Static layout · no sample data.</footer>
+  </div>
+</div>
+<script src="campus.js"></script>
+</body>
+</html>

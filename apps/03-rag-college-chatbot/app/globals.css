@@ -102,3 +102,23 @@ body {
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* EduSense shared navy theme tokens (additive, single source of truth) */
+:root {
+  --navy-900: #0a1931;
+  --navy-800: #0b1f3a;
+  --edusense-text: #e8eef7;
+  --edusense-muted: #9fb3c8;
+  --edusense-accent: #00c2ff;
+}
+body {
+  color: var(--edusense-text);
+  background: radial-gradient(circle at 50% 0%, #12294d 0%, var(--navy-900) 60%, var(--navy-800) 100%);
+}
+.btn-navy {
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--edusense-accent) 0%, #3b82f6 100%);
+  box-shadow: 0 8px 20px -8px rgba(0, 194, 255, 0.55);
+}
+.risk-pill { border-radius: 999px; }
+.risk-pill.active { outline: 3px solid #fff; outline-offset: 2px; }

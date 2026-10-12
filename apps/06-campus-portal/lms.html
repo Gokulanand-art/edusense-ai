@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Courses - EduSense</title>
+<link rel="stylesheet" href="campus.css">
+</head>
+<body data-page="lms">
+<div class="shell">
+  <nav class="side" id="side" aria-label="Primary">
+    <div class="profile"><span class="pfp">--</span><b><span data-profile-name>Staff</span><small data-profile-sub>Admin · staff login</small></b></div>
+
+    <a href="index.html" data-nav="dashboard"><i>▦</i>Dashboard</a>
+    <a href="students.html" data-nav="students"><i>◉</i>Students</a>
+    <a href="attendance.html" data-nav="attendance"><i>◷</i>Attendance</a>
+    <small class="sec">Academics</small>
+    <a href="lms.html" data-nav="lms"><i>▤</i>Courses</a>
+    <a href="analytics.html" data-nav="analytics"><i>◩</i>Grades</a>
+    <a href="library.html" data-nav="library"><i>▧</i>Library</a>
+    <small class="sec">System</small>
+    <a href="access.html" data-nav="access" data-for="admin hod"><i>⬣</i>Roles</a>
+    <a href="settings.html" data-nav="settings" data-for="admin"><i>⚙</i>Settings</a>
+    <div class="foot">Static layout · plug data in <b>Settings</b></div>
+  </nav>
+  <div class="main">
+    <div class="topbar">
+      <button class="btn" id="menuBtn">☰</button>
+      <div><h1 data-for="admin hod">Courses</h1><h1 data-for="student" class="hide">My Courses</h1>
+      <p class="day">Enrolled courses and due work</p></div>
+      <div class="searchbar"><input type="search" placeholder="Search courses, assignments…" aria-label="Search courses"></div>
+    </div>
+    <div class="cols2">
+      <section class="card"><div class="cardhead"><h3 data-for="admin hod">All Courses</h3><h3 data-for="student" class="hide">Enrolled</h3><a href="settings.html" data-for="admin">Connect →</a></div>
+        <div class="empty" data-slot="lms-courses"><b>No courses yet</b><span>Course cards with completion bars appear after LMS sync</span></div></section>
+      <section class="card"><div class="cardhead"><h3>Upcoming Assignments</h3></div>
+        <div class="empty" data-slot="lms-assignments"><b>Nothing due</b><span>Assignments with priority tags and due counts appear here</span></div></section>
+    </div>
+    <section class="card" data-for="admin hod"><div class="cardhead"><h3>Completion</h3></div>
+      <div class="empty" data-slot="lms-completion"><b>—</b><span>Per-course completion bars appear here</span></div></section>
+    <footer><a href="index.html" style="color:#2563eb">← Dashboard</a> · Static layout · no sample data.</footer>
+  </div>
+</div>
+<script src="campus.js"></script>
+</body>
+</html>

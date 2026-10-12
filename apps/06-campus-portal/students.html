@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Students - EduSense</title>
+<link rel="stylesheet" href="campus.css">
+</head>
+<body data-page="students">
+<div class="shell">
+  <nav class="side" id="side" aria-label="Primary">
+    <div class="profile"><span class="pfp">--</span><b><span data-profile-name>Staff</span><small data-profile-sub>Admin · staff login</small></b></div>
+
+    <a href="index.html" data-nav="dashboard"><i>▦</i>Dashboard</a>
+    <a href="students.html" data-nav="students"><i>◉</i><span data-for="admin hod">Students</span><span data-for="student" class="hide">My Profile</span></a>
+    <a href="attendance.html" data-nav="attendance"><i>◷</i>Attendance</a>
+    <small class="sec">Academics</small>
+    <a href="lms.html" data-nav="lms"><i>▤</i>Courses</a>
+    <a href="analytics.html" data-nav="analytics"><i>◩</i>Grades</a>
+    <a href="library.html" data-nav="library"><i>▧</i>Library</a>
+    <small class="sec">System</small>
+    <a href="access.html" data-nav="access" data-for="admin hod"><i>⬣</i>Roles</a>
+    <a href="settings.html" data-nav="settings" data-for="admin"><i>⚙</i>Settings</a>
+    <div class="foot">Static layout · plug data in <b>Settings</b></div>
+  </nav>
+  <div class="main">
+    <div class="topbar">
+      <button class="btn" id="menuBtn">☰</button>
+      <div><h1 data-for="admin hod">Students</h1><h1 data-for="student" class="hide">My Profile</h1>
+      <p class="day" data-for="admin hod">Full register · import from Settings</p><p class="day" data-for="student" class="hide">Your record · maintained by office</p></div>
+      <div class="searchbar" data-for="admin hod"><input type="search" placeholder="Search students…" aria-label="Search students"></div>
+    </div>
+    <section class="card" data-for="admin hod">
+      <div class="cardhead"><h3>All Students <span data-for="hod" class="hide" style="font-size:12px;color:#6b7280">· your department only</span></h3><a href="settings.html" data-for="admin">Import →</a></div>
+      <div class="toolbar" data-for="admin">
+        <select aria-label="Class filter"><option>All classes</option></select>
+        <button class="btn primary">+ Add</button>
+        <button class="btn">Import CSV</button>
+      </div>
+      <table>
+        <thead><tr><th>Adm No</th><th>Name</th><th>Class</th><th>Score</th><th>Band</th><th>Action</th></tr></thead>
+        <tbody><tr><td colspan="6"><div class="empty" data-slot="table-students"><b>No students yet</b><span>Rows appear here after import</span></div></td></tr></tbody>
+      </table>
+      <div class="datainfo">Showing 0 of 0 · connect a source in Settings</div>
+    </section>
+    <section class="card" data-for="student">
+      <div class="cardhead"><h3>About Me</h3></div>
+      <table>
+        <tbody>
+          <tr><td style="color:#6b7280;width:40%">Name</td><td data-slot="me-name">—</td></tr>
+          <tr><td style="color:#6b7280">Admission No</td><td data-slot="me-adm">—</td></tr>
+          <tr><td style="color:#6b7280">Class</td><td data-slot="me-class">—</td></tr>
+          <tr><td style="color:#6b7280">Guardian</td><td data-slot="me-guardian">—</td></tr>
+          <tr><td style="color:#6b7280">Phone</td><td data-slot="me-phone">—</td></tr>
+        </tbody>
+      </table>
+      <div class="datainfo">Details fill in after office import · corrections via class teacher</div>
+    </section>
+    <footer><a href="index.html" style="color:#2563eb">← Dashboard</a> · Static layout · no sample data.</footer>
+  </div>
+</div>
+<script src="campus.js"></script>
+</body>
+</html>

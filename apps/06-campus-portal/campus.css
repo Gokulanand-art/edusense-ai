@@ -1,0 +1,71 @@
+/* EduSense Campus theme - clean student-dashboard style, hand built */
+*{box-sizing:border-box}
+body{margin:0;background:#f4f6fb;color:#1f2937;font-family:"Segoe UI",Arial,Helvetica,sans-serif;font-size:14px}
+.shell{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+/* sidebar */
+.side{background:#fff;border-right:1px solid #e8ecf3;padding:18px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:2px}
+.profile{display:flex;align-items:center;gap:10px;padding:6px 8px 16px;border-bottom:1px solid #eef1f6;margin-bottom:10px}
+.pfp{width:42px;height:42px;border-radius:50%;background:#dbe4f0;color:#8aa0bd;display:grid;place-items:center;font-weight:700}
+.profile b{font-size:14px}.profile small{display:block;color:#8a94a6;font-size:11px;font-weight:400}
+.side small.sec{color:#9aa3b5;font-size:11px;padding:12px 12px 4px}
+.side a{display:flex;gap:11px;align-items:center;color:#4b5563;text-decoration:none;border-radius:12px;padding:10px 12px;font-weight:600}
+.side a i{width:22px;text-align:center;font-style:normal;color:#9aa3b5}
+.side a:hover{background:#f2f5fa}
+.side a.on{background:#e9effe;color:#2563eb}
+.side a.on i{color:#2563eb}
+.side .foot{margin-top:auto;padding:10px 12px;color:#9aa3b5;font-size:11px}
+.hide{display:none!important}
+/* main + topbar */
+.main{padding:20px clamp(14px,2.5vw,30px) 26px;max-width:1200px}
+.topbar{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.topbar h1{margin:0;font-size:22px}
+.topbar .day{margin:2px 0 0;color:#6b7280;font-size:12px}
+.searchbar{margin-left:auto;display:flex;gap:10px;align-items:center}
+.searchbar input{border:1px solid #e8ecf3;background:#fff;border-radius:999px;padding:10px 18px;font-size:13px;width:300px;outline:none}
+.searchbar input:focus{border-color:#2563eb}
+.bell{width:42px;height:42px;border-radius:50%;border:1px solid #e8ecf3;background:#fff;font-size:17px;cursor:pointer}
+/* cards */
+.card{background:#fff;border:1px solid #edf0f6;border-radius:18px;box-shadow:0 2px 10px rgba(16,24,40,.05);padding:18px;margin-bottom:14px}
+.cardhead{display:flex;align-items:center;margin-bottom:12px}
+.cardhead h3{margin:0;font-size:16px}
+.cardhead a{margin-left:auto;color:#2563eb;font-size:13px;font-weight:600;text-decoration:none}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+.stat{background:#fff;border:1px solid #edf0f6;border-radius:18px;box-shadow:0 2px 10px rgba(16,24,40,.05);padding:14px 16px}
+.stat small{color:#6b7280;font-size:12px}
+/* inner rows + empty states */
+.rowbox{background:#f6f8fc;border-radius:14px;padding:13px 15px;margin:9px 0}
+.rowbox b{font-size:13px}
+.rowbox small{color:#6b7280;font-size:12px}
+.empty{background:#f6f8fc;border-radius:14px;padding:22px;text-align:center;color:#6b7280;margin:9px 0}
+.empty b{display:block;color:#374151;margin-bottom:3px}
+.empty span{font-size:12px}
+/* pills, grades, bars (used once real data arrives) */
+.tag{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:3px 10px;margin-left:8px}
+.tag.high{background:#fee2e2;color:#b91c1c}.tag.medium{background:#fef3c7;color:#b45309}.tag.low{background:#dcfce7;color:#15803d}
+.grade{float:right;color:#16a34a;font-weight:700}
+.bar{height:7px;border-radius:99px;background:#e8ecf3;margin-top:9px;overflow:hidden}
+.bar i{display:block;height:100%;background:#2563eb;border-radius:99px}
+.pct{text-align:right;font-size:12px;color:#374151;font-weight:600;margin-top:3px}
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:#6b7280;font-weight:600;font-size:11px;text-transform:uppercase;padding:9px;border-bottom:1px solid #eef1f6}
+td{padding:10px 9px;border-bottom:1px solid #f1f4f9}
+tr:last-child td{border-bottom:0}
+.datainfo{color:#9aa3b5;font-size:12px;padding:8px 2px 0}
+/* buttons */
+.btn{display:inline-block;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid #e2e8f2;background:#fff;color:#1f2937;text-decoration:none;margin-right:6px}
+.btn.primary{background:#2563eb;border-color:#2563eb;color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btnrow{margin-top:10px}
+.toolbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.toolbar input,.toolbar select{border:1px solid #e2e8f2;border-radius:10px;padding:8px 12px;font-size:13px}
+.toolbar input{flex:1;min-width:150px}
+footer{color:#9aa3b5;font-size:11px;margin-top:8px;text-align:center}
+#menuBtn{display:none}
+@media(max-width:960px){
+  .shell{grid-template-columns:1fr}.side{position:fixed;z-index:20;left:0;top:0;bottom:0;width:250px;transform:translateX(-105%);transition:transform .2s;height:100%}
+  .side.open{transform:none;box-shadow:0 0 40px rgba(0,0,0,.15)}
+  #menuBtn{display:inline-block}.statgrid{grid-template-columns:1fr 1fr}.cols2{grid-template-columns:1fr}
+  .searchbar{margin-left:0}.searchbar input{width:170px}
+}

@@ -57,15 +57,14 @@
             <h2 class="section-title">Faculty Overview</h2>
             <p class="section-subtitle">Manage academic performance and student interventions.</p>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="loadFacultyDashboard()">
+        <button class="btn btn-primary btn-sm btn-navy btn-navy-sm" onclick="loadFacultyDashboard()">
             <i class="fas fa-sync"></i>
             <span>Refresh Data</span>
         </button>
     </div>
 
     <!-- Key Metrics -->
-    <div class="stats-grid" style="margin-bottom: 32px;">
-        <div class="stat-card stat-card-primary">
+    <div class="stats-grid" style="margin-bottom: 32px;">        <div class="stat-card stat-card-primary">
             <div class="stat-icon"><i class="fas fa-users"></i></div>
             <div class="stat-content">
                 <p class="stat-label">My Students</p>
@@ -93,6 +92,16 @@
                 <p class="stat-value" id="facultySubjectCount">0</p>
             </div>
         </div>
+    </div>
+
+    <!-- EduSense risk band filter (M3 pilot: ?band= query param, OR lends itself to server filtering; JS sets active + counts) -->
+    <div class="risk-filter-group" role="group" aria-label="Filter by risk band" style="margin-bottom: 24px;">
+        <a class="risk-pill risk-all" data-band="all" href="?">All <span class="risk-count" id="bandAllCount"></span></a>
+        <a class="risk-pill risk-thriving" data-band="thriving" href="?band=thriving">Thriving <span class="risk-count"></span></a>
+        <a class="risk-pill risk-steady" data-band="steady" href="?band=steady">Steady <span class="risk-count"></span></a>
+        <a class="risk-pill risk-support" data-band="support" href="?band=support">Needs Support <span class="risk-count"></span></a>
+        <a class="risk-pill risk-atrisk" data-band="at-risk" href="?band=at-risk">At-Risk <span class="risk-count" id="bandAtRiskCount"></span></a>
+        <span class="risk-hint">Multi-select: hold Ctrl/Cmd and open in new tab to combine (OR). Server may ignore unknown bands.</span>
     </div>
 
     <!-- Classroom Workflow -->
