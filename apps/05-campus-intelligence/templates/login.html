@@ -1,0 +1,182 @@
+{% extends "base_auth.html" %}
+{% block title %}Login – Smart Campus Intelligence{% endblock %}
+
+{% block brand_features %}
+<div class="brand-feature">
+    <div class="brand-feature-icon"><i class="fas fa-chart-line"></i></div>
+    <div class="brand-feature-text">
+        <strong>Advanced Analytics</strong>
+        <span>Data-driven insights for success</span>
+    </div>
+</div>
+<div class="brand-feature">
+    <div class="brand-feature-icon"><i class="fas fa-users"></i></div>
+    <div class="brand-feature-text">
+        <strong>Connected Community</strong>
+        <span>Real-time collaboration tools</span>
+    </div>
+</div>
+<div class="brand-feature">
+    <div class="brand-feature-icon"><i class="fas fa-shield-alt"></i></div>
+    <div class="brand-feature-text">
+        <strong>Bank-Grade Security</strong>
+        <span>ISO certified protection</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Login Panel -->
+<div id="loginPanel">
+    <div class="auth-badge"><i class="fas fa-lock"></i> Sign In</div>
+    <h2>Welcome Back</h2>
+    <p class="auth-sub">Continue your Smart Campus journey</p>
+
+    <form id="loginForm" onsubmit="event.preventDefault(); login();">
+        <div class="field-label">Email Address <span class="required">*</span></div>
+        <div class="field-wrap">
+            <i class="fas fa-envelope field-icon"></i>
+            <input type="email" id="email" class="field-input" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <span class="error-message" id="emailError"></span>
+
+        <div class="field-label">Password <span class="required">*</span></div>
+        <div class="field-wrap">
+            <i class="fas fa-lock field-icon"></i>
+            <input type="password" id="password" class="field-input" placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="toggle-pw" onclick="toggleFieldPassword('password', this)">
+                <i class="fas fa-eye"></i>
+            </button>
+        </div>
+        <span class="error-message" id="passwordError"></span>
+
+        <div class="auth-options">
+            <label class="remember-wrap">
+                <input type="checkbox" id="rememberMe"> Remember me
+            </label>
+            <a href="#" class="forgot-link" onclick="showForgotPanel(); return false;">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="auth-btn" id="loginBtn">
+            Sign In <i class="fas fa-arrow-right"></i>
+        </button>
+        <div id="loginMessage" class="auth-alert"></div>
+    </form>
+
+    <div class="auth-divider-line">New to Smart Campus?</div>
+
+    <button class="auth-btn-secondary" onclick="go('/register')">
+        Create Account <i class="fas fa-plus"></i>
+    </button>
+
+    <div class="auth-help">Issues logging in? <a href="#">Get help</a></div>
+</div>
+
+<!-- Forgot Password Panel -->
+<div id="forgotPanel" style="display:none">
+    <a href="#" onclick="showLoginPanel(); return false;" style="display:inline-flex;align-items:center;gap:6px;color:#4f46e5;text-decoration:none;font-size:13px;font-weight:600;margin-bottom:20px">
+        <i class="fas fa-arrow-left"></i> Back to login
+    </a>
+    <h2 style="margin-bottom:6px">Reset Password</h2>
+    <p class="auth-sub">Recover your account via OTP verification</p>
+
+    <div id="forgotStep1">
+        <div class="field-label">Your Email Address <span class="required">*</span></div>
+        <div class="field-wrap">
+            <i class="fas fa-envelope field-icon"></i>
+            <input type="email" id="forgotEmail" class="field-input" placeholder="you@example.com">
+        </div>
+        <button class="auth-btn" id="sendOtpBtn" onclick="sendOtp()">
+            Send OTP <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+
+    <div id="forgotStep2" style="display:none">
+        <p style="color:#10b981;font-size:13px;margin-bottom:18px"><i class="fas fa-check-circle"></i> OTP sent to <strong id="otpSentEmail"></strong></p>
+        <div class="field-label">Enter 6-Digit OTP</div>
+        <div style="display:flex;gap:8px;justify-content:space-between;margin-bottom:16px">
+            <input type="text" class="field-input otp-digit" id="otpDigit1" maxlength="1" style="text-align:center;padding:12px 0;width:46px;font-size:18px;font-weight:700">
+            <input type="text" class="field-input otp-digit" id="otpDigit2" maxlength="1" style="text-align:center;padding:12px 0;width:46px;font-size:18px;font-weight:700">
+            <input type="text" class="field-input otp-digit" id="otpDigit3" maxlength="1" style="text-align:center;padding:12px 0;width:46px;font-size:18px;font-weight:700">
+            <input type="text" class="field-input otp-digit" id="otpDigit4" maxlength="1" style="text-align:center;padding:12px 0;width:46px;font-size:18px;font-weight:700">
+            <input type="text" class="field-input otp-digit" id="otpDigit5" maxlength="1" style="text-align:center;padding:12px 0;width:46px;font-size:18px;font-weight:700">
+            <input type="text" class="field-input otp-digit" id="otpDigit6" maxlength="1" style="text-align:center;padding:12px 0;width:46px;font-size:18px;font-weight:700">
+        </div>
+        <p style="font-size:12px;color:#94a3b8;margin-bottom:16px">Expires in <strong id="otpCountdown">15:00</strong></p>
+        <button class="auth-btn" id="verifyOtpBtn" onclick="verifyOtp()">
+            Verify OTP <i class="fas fa-check"></i>
+        </button>
+    </div>
+
+    <div id="forgotStep3" style="display:none">
+        <div class="field-label">New Password <span class="required">*</span></div>
+        <div class="field-wrap">
+            <i class="fas fa-lock field-icon"></i>
+            <input type="password" id="newPassword" class="field-input" placeholder="Create strong password">
+            <button type="button" class="toggle-pw" onclick="toggleFieldPassword('newPassword', this)"><i class="fas fa-eye"></i></button>
+        </div>
+        <div class="field-label">Confirm Password <span class="required">*</span></div>
+        <div class="field-wrap">
+            <i class="fas fa-lock field-icon"></i>
+            <input type="password" id="confirmPassword" class="field-input" placeholder="Confirm new password">
+            <button type="button" class="toggle-pw" onclick="toggleFieldPassword('confirmPassword', this)"><i class="fas fa-eye"></i></button>
+        </div>
+        <button class="auth-btn" id="resetPasswordBtn" onclick="resetPassword()">
+            Reset Password <i class="fas fa-lock-open"></i>
+        </button>
+    </div>
+
+    <div id="forgotMessage" class="auth-alert"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='auth.js') }}"></script>
+<script>
+function toggleFieldPassword(inputId, btn) {
+    var inp = document.getElementById(inputId);
+    if (!inp) return;
+    if (inp.type === 'password') { inp.type = 'text'; btn.innerHTML = '<i class="fas fa-eye-slash"></i>'; }
+    else { inp.type = 'password'; btn.innerHTML = '<i class="fas fa-eye"></i>'; }
+}
+function showForgotPanel() {
+    document.getElementById('loginPanel').style.display = 'none';
+    document.getElementById('forgotPanel').style.display = 'block';
+    _showForgotStep(1);
+    var loginEmail = document.getElementById('email');
+    var forgotEmail = document.getElementById('forgotEmail');
+    if (loginEmail && forgotEmail && loginEmail.value.trim())
+        forgotEmail.value = loginEmail.value.trim();
+}
+function showLoginPanel() {
+    document.getElementById('forgotPanel').style.display = 'none';
+    document.getElementById('loginPanel').style.display = 'block';
+}
+function _showForgotStep(n) {
+    [1,2,3].forEach(function(i) {
+        var el = document.getElementById('forgotStep'+i);
+        if (el) el.style.display = (i === n ? 'block' : 'none');
+    });
+}
+// OTP digit auto-advance
+document.addEventListener('DOMContentLoaded', function() {
+    var digits = document.querySelectorAll('.otp-digit');
+    digits.forEach(function(inp, idx) {
+        inp.addEventListener('input', function() {
+            if (this.value.length === 1 && idx < digits.length - 1) digits[idx+1].focus();
+        });
+        inp.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace' && this.value.length === 0 && idx > 0) digits[idx-1].focus();
+        });
+    });
+    // Auto-fill remembered email
+    var rem = localStorage.getItem('remember_email');
+    if (rem) {
+        var emailEl = document.getElementById('email');
+        if (emailEl) emailEl.value = rem;
+        var remEl = document.getElementById('rememberMe');
+        if (remEl) remEl.checked = true;
+    }
+});
+</script>
+{% endblock %}

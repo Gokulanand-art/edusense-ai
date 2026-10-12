@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard — Smart Campus{% endblock %}
+{% block breadcrumb %}Leaderboard{% endblock %}
+{% block page_title %}Placement Readiness Leaderboard{% endblock %}
+
+{% block extra_css %}
+<style>
+.lb-header{background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:20px;padding:28px 32px;color:#fff;margin-bottom:28px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+.lb-header h2{font-size:22px;font-weight:800;margin:0 0 4px}
+.lb-header p{font-size:14px;margin:0;opacity:.85}
+.lb-controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
+.lb-controls select,.lb-controls input{padding:9px 14px;border-radius:8px;border:1.5px solid var(--border-color,#e2e8f0);background:var(--card-bg,#fff);font-size:13px;font-weight:600;color:var(--text-primary,#0f172a)}
+.lb-table-wrap{background:var(--card-bg,#fff);border-radius:16px;border:1px solid var(--border-color,#e2e8f0);overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.lb-table{width:100%;border-collapse:collapse}
+.lb-table th{background:var(--bg-secondary,#f8fafc);padding:13px 16px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted,#64748b);border-bottom:1px solid var(--border-color,#e2e8f0)}
+.lb-table td{padding:14px 16px;border-bottom:1px solid var(--border-color,#e2e8f0);font-size:14px;color:var(--text-primary,#0f172a)}
+.lb-table tr:last-child td{border-bottom:none}
+.lb-table tr:hover td{background:var(--bg-hover,rgba(79,70,229,.03))}
+.rank-badge{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;font-size:13px;font-weight:800}
+.rank-1{background:linear-gradient(135deg,#ffd700,#f59e0b);color:#78350f}
+.rank-2{background:linear-gradient(135deg,#c0c0c0,#94a3b8);color:#1e293b}
+.rank-3{background:linear-gradient(135deg,#cd7f32,#b45309);color:#fff}
+.rank-n{background:#f1f5f9;color:#64748b}
+.score-bar{display:flex;align-items:center;gap:10px}
+.score-bar-track{flex:1;height:7px;background:#e2e8f0;border-radius:99px;overflow:hidden;min-width:80px}
+.score-bar-fill{height:100%;border-radius:99px;transition:width .5s ease}
+.score-pct{font-size:13px;font-weight:700;min-width:40px}
+.me-row td{background:rgba(79,70,229,.06)!important;font-weight:600}
+.me-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;background:#ede9fe;color:#5b21b6;font-size:11px;font-weight:700;margin-left:6px}
+.dept-tag{padding:3px 10px;border-radius:99px;background:#f1f5f9;color:#475569;font-size:12px;font-weight:600}
+.status-badge{padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700}
+.status-ready{background:#d1fae5;color:#065f46}
+.status-moderate{background:#fef3c7;color:#92400e}
+.status-risk{background:#fee2e2;color:#991b1b}
+.pagination{display:flex;gap:6px;justify-content:center;padding:16px}
+.page-btn{padding:7px 14px;border-radius:8px;border:1.5px solid #e2e8f0;background:#fff;font-size:13px;font-weight:600;color:#475569;cursor:pointer;transition:all .2s}
+.page-btn.active,.page-btn:hover{border-color:#4f46e5;background:#4f46e5;color:#fff}
+.lb-empty{text-align:center;padding:60px 20px;color:#94a3b8}
+</style>
+{% endblock %}
+
+{% block sidebar_nav %}
+{% set role = session.get('role_name','') if session else '' %}
+{% if role == 'admin' %}
+<li class="nav-item" onclick="go('/admin-dashboard')"><i class="fas fa-home nav-icon"></i><span>Dashboard</span></li>
+<li class="nav-item active"><i class="fas fa-trophy nav-icon"></i><span>Leaderboard</span></li>
+{% else %}
+<li class="nav-item" onclick="go('/student-dashboard')"><i class="fas fa-home nav-icon"></i><span>Dashboard</span></li>
+<li class="nav-item active"><i class="fas fa-trophy nav-icon"></i><span>Leaderboard</span></li>
+<li class="nav-item" onclick="go('/skill-gap')"><i class="fas fa-chart-bar nav-icon"></i><span>Skill Gap</span></li>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="lb-header">
+  <div>
+    <h2><i class="fas fa-trophy" style="margin-right:8px;color:#ffd700"></i>Placement Readiness Leaderboard</h2>
+    <p>Top performers ranked by overall placement readiness score.</p>
+  </div>
+  <div id="yourRankBadge" style="display:none;background:rgba(255,255,255,.2);border-radius:12px;padding:14px 20px;text-align:center">
+    <div style="font-size:28px;font-weight:900;line-height:1" id="yourRankVal">—</div>
+    <div style="font-size:12px;opacity:.85;margin-top:3px">Your Rank</div>
+  </div>
+</div>
+
+<div class="lb-controls">
+  <select id="deptFilter" onchange="loadLeaderboard()">
+    <option value="">All Departments</option>
+  </select>
+  <select id="limitFilter" onchange="loadLeaderboard()">
+    <option value="25">Top 25</option>
+    <option value="50">Top 50</option>
+    <option value="100">Top 100</option>
+  </select>
+  <button class="btn btn-outline btn-sm" onclick="loadLeaderboard()"><i class="fas fa-sync"></i> Refresh</button>
+  <div id="lastUpdated" style="font-size:12px;color:#94a3b8;margin-left:auto"></div>
+</div>
+
+<div class="lb-table-wrap">
+  <table class="lb-table">
+    <thead>
+      <tr>
+        <th style="width:60px">Rank</th>
+        <th>Student</th>
+        <th>Department</th>
+        <th style="min-width:200px">Readiness Score</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="lbBody">
+      <tr><td colspan="5" class="lb-empty"><i class="fas fa-spinner fa-spin" style="font-size:24px;display:block;margin-bottom:12px"></i>Loading leaderboard…</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script src="{{ url_for('static', filename='shared.js') }}"></script>
+<script>
+const _myRole = (sessionStorage.getItem("role_name") || "").toLowerCase();
+let _myStudentId = null;
+
+async function loadLeaderboard() {
+  const dept  = document.getElementById("deptFilter").value;
+  const limit = document.getElementById("limitFilter").value;
+  const params = new URLSearchParams({ limit });
+  if (dept) params.set("department", dept);
+
+  const tbody = document.getElementById("lbBody");
+  tbody.innerHTML = '<tr><td colspan="5" class="lb-empty"><i class="fas fa-spinner fa-spin"></i></td></tr>';
+
+  try {
+    const res = await fetchAuth("/api/leaderboard?" + params.toString());
+    if (!res.success) throw new Error(res.error);
+
+    const { students, departments, my_rank, my_student_id } = res.data;
+    _myStudentId = my_student_id;
+
+    // Populate dept filter
+    const df = document.getElementById("deptFilter");
+    const existing = new Set([...df.options].map(o => o.value));
+    (departments || []).forEach(d => {
+      if (!existing.has(d)) {
+        const opt = document.createElement("option");
+        opt.value = d; opt.textContent = d;
+        if (d === dept) opt.selected = true;
+        df.appendChild(opt);
+      }
+    });
+
+    // Show "your rank" badge for students
+    if (my_rank && _myRole === "student") {
+      document.getElementById("yourRankBadge").style.display = "block";
+      document.getElementById("yourRankVal").textContent = "#" + my_rank;
+    }
+
+    if (!students || !students.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="lb-empty"><div style="font-size:36px;margin-bottom:12px">🏆</div><p>No data yet. Add marks, attendance and skills to appear here.</p></td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = students.map((s, i) => {
+      const rank = i + 1;
+      const rankClass = rank === 1 ? "rank-1" : rank === 2 ? "rank-2" : rank === 3 ? "rank-3" : "rank-n";
+      const rankLabel = rank <= 3 ? ["🥇","🥈","🥉"][rank-1] : rank;
+      const score = parseFloat(s.final_score || 0);
+      const fillColor = score >= 80 ? "#10b981" : score >= 60 ? "#f59e0b" : "#ef4444";
+      const statusClass = score >= 80 ? "status-ready" : score >= 60 ? "status-moderate" : "status-risk";
+      const statusLabel = score >= 80 ? "Ready" : score >= 60 ? "Moderate" : "At Risk";
+      const isMe = s.student_id === _myStudentId;
+      const meTag = isMe ? '<span class="me-tag">You</span>' : "";
+      // Privacy: show full name for admin, initials for other students
+      const displayName = (_myRole === "admin" || isMe)
+        ? escapeHtml(s.name || "Student")
+        : escapeHtml((s.name || "S").split(" ")[0] + " " + ((s.name || "").split(" ").pop()?.[0] || "") + ".");
+
+      return `<tr class="${isMe ? "me-row" : ""}">
+        <td><span class="rank-badge ${rankClass}">${rankLabel}</span></td>
+        <td>${displayName}${meTag}</td>
+        <td><span class="dept-tag">${escapeHtml(s.department || "N/A")}</span></td>
+        <td>
+          <div class="score-bar">
+            <div class="score-bar-track"><div class="score-bar-fill" style="width:${score}%;background:${fillColor}"></div></div>
+            <span class="score-pct" style="color:${fillColor}">${score.toFixed(1)}%</span>
+          </div>
+        </td>
+        <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+      </tr>`;
+    }).join("");
+
+    setText("lastUpdated", "Updated " + new Date().toLocaleTimeString());
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" class="lb-empty">Failed to load: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+loadLeaderboard();
+</script>
+{% endblock %}

@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+{% block title %}Bulk Marks Entry — Smart Campus{% endblock %}
+{% block breadcrumb %}Bulk Marks Entry{% endblock %}
+{% block page_title %}Bulk Marks Entry{% endblock %}
+
+{% block extra_css %}
+<style>
+.bm-card{background:var(--card-bg,#fff);border-radius:16px;border:1px solid var(--border-color,#e2e8f0);padding:24px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.bm-card h3{font-size:15px;font-weight:700;color:var(--text-primary,#0f172a);margin:0 0 18px;display:flex;align-items:center;gap:8px}
+.step-row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:4px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted,#64748b)}
+.form-group select,.form-group input{padding:10px 14px;border-radius:8px;border:1.5px solid var(--border-color,#e2e8f0);background:var(--input-bg,#f8fafc);font-size:14px;color:var(--text-primary,#0f172a);min-width:180px}
+.form-group select:focus,.form-group input:focus{outline:none;border-color:#4f46e5}
+.marks-table{width:100%;border-collapse:collapse}
+.marks-table th{background:var(--bg-secondary,#f8fafc);padding:11px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted,#64748b);border-bottom:1px solid var(--border-color,#e2e8f0)}
+.marks-table td{padding:10px 14px;border-bottom:1px solid var(--border-color,#f1f5f9);font-size:14px}
+.marks-table tr:last-child td{border-bottom:none}
+.marks-input{width:90px;padding:7px 10px;border-radius:6px;border:1.5px solid #e2e8f0;text-align:center;font-size:14px;font-weight:600;color:var(--text-primary,#0f172a)}
+.marks-input:focus{outline:none;border-color:#4f46e5}
+.marks-input.valid{border-color:#10b981;background:#f0fdf4}
+.marks-input.invalid{border-color:#ef4444;background:#fef2f2}
+.row-status{width:24px;text-align:center;font-size:14px}
+.score-bar{display:flex;align-items:center;gap:8px}
+.score-mini-bar{width:50px;height:5px;background:#e2e8f0;border-radius:99px;overflow:hidden}
+.score-mini-fill{height:100%;background:#4f46e5;border-radius:99px}
+.summary-bar{display:flex;gap:16px;padding:14px 0;border-top:1px solid var(--border-color,#e2e8f0);margin-top:8px;flex-wrap:wrap}
+.summary-item{font-size:13px;color:var(--text-muted,#64748b)}
+.summary-item strong{color:var(--text-primary,#0f172a)}
+.empty-state{text-align:center;padding:48px 20px;color:#94a3b8}
+</style>
+{% endblock %}
+
+{% block sidebar_nav %}
+<li class="nav-item" onclick="go('/faculty-dashboard')"><i class="fas fa-home nav-icon"></i><span>Dashboard</span></li>
+<li class="nav-item active"><i class="fas fa-edit nav-icon"></i><span>Bulk Marks</span></li>
+{% endblock %}
+
+{% block content %}
+
+<!-- Step 1: Select subject and exam type -->
+<div class="bm-card">
+  <h3><i class="fas fa-filter" style="color:#4f46e5"></i> Step 1 — Select Subject & Exam Type</h3>
+  <div class="step-row">
+    <div class="form-group">
+      <label>Department</label>
+      <select id="deptSel" onchange="loadSubjects()">
+        <option value="">All Departments</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Subject *</label>
+      <select id="subjectSel" onchange="loadStudents()">
+        <option value="">— select subject —</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Exam Type *</label>
+      <select id="examType">
+        <option value="Internal">Internal</option>
+        <option value="Midterm">Midterm</option>
+        <option value="Final">Final</option>
+        <option value="Practical">Practical</option>
+        <option value="Assignment">Assignment</option>
+        <option value="Viva">Viva</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Max Marks</label>
+      <input type="number" id="maxMarks" value="100" min="1" max="1000" style="width:90px" onchange="updateMaxDisplay()">
+    </div>
+  </div>
+</div>
+
+<!-- Step 2: Marks entry table -->
+<div class="bm-card">
+  <h3><i class="fas fa-table" style="color:#10b981"></i> Step 2 — Enter Marks</h3>
+  <div id="marksTableWrap">
+    <div class="empty-state"><i class="fas fa-arrow-up" style="font-size:28px;margin-bottom:12px;display:block;color:#cbd5e1"></i><p>Select a subject above to load students.</p></div>
+  </div>
+  <div class="summary-bar" id="summaryBar" style="display:none">
+    <div class="summary-item">Total: <strong id="sumTotal">0</strong></div>
+    <div class="summary-item">Filled: <strong id="sumFilled">0</strong></div>
+    <div class="summary-item">Class Avg: <strong id="sumAvg">—</strong></div>
+    <div class="summary-item">Pass Rate: <strong id="sumPass">—</strong></div>
+  </div>
+</div>
+
+<!-- Step 3: Submit -->
+<div style="display:flex;gap:12px;align-items:center">
+  <button class="btn btn-primary" id="submitBtn" onclick="submitMarks(this)" disabled>
+    <i class="fas fa-save"></i> Save All Marks
+  </button>
+  <button class="btn btn-outline" onclick="clearAll()"><i class="fas fa-times"></i> Clear</button>
+  <div id="submitStatus" style="font-size:13px;color:#64748b"></div>
+</div>
+
+<script src="{{ url_for('static', filename='shared.js') }}"></script>
+<script>
+requireAuth(["Faculty"]);
+
+let _students = [];
+let _subjectId = null;
+
+// ── Load departments and subjects ─────────────────────────────────────────────
+async function loadSubjects() {
+  const dept = document.getElementById("deptSel").value;
+  try {
+    const res = await fetchAuth("/subjects" + (dept ? "?department=" + encodeURIComponent(dept) : ""));
+    const subjects = res.subjects || res.data || res || [];
+    const sel = document.getElementById("subjectSel");
+    sel.innerHTML = '<option value="">— select subject —</option>';
+    subjects.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = s.name + (s.department ? " (" + s.department + ")" : "");
+      sel.appendChild(opt);
+    });
+    _subjectId = null;
+    _students = [];
+    renderTable([]);
+  } catch (e) { showToast("Could not load subjects: " + e.message, "error"); }
+}
+
+async function loadStudents() {
+  const subjectId = document.getElementById("subjectSel").value;
+  if (!subjectId) { renderTable([]); return; }
+  _subjectId = parseInt(subjectId);
+
+  try {
+    // Get all students + their existing marks for this subject+exam_type
+    const examType = document.getElementById("examType").value;
+    const res = await fetchAuth("/faculty/students-for-marks?subject_id=" + subjectId + "&exam_type=" + encodeURIComponent(examType));
+    _students = res.students || res.data || [];
+    renderTable(_students);
+    document.getElementById("submitBtn").disabled = _students.length === 0;
+  } catch (e) {
+    showToast("Could not load students: " + e.message, "error");
+  }
+}
+
+function renderTable(students) {
+  const wrap = document.getElementById("marksTableWrap");
+  document.getElementById("summaryBar").style.display = students.length ? "flex" : "none";
+  setText("sumTotal", students.length);
+
+  if (!students.length) {
+    wrap.innerHTML = '<div class="empty-state"><i class="fas fa-users" style="font-size:28px;margin-bottom:12px;display:block;color:#cbd5e1"></i><p>No students found for this subject.</p></div>';
+    return;
+  }
+
+  const maxM = parseInt(document.getElementById("maxMarks").value) || 100;
+  const passThreshold = maxM * 0.4;
+
+  wrap.innerHTML = `
+    <div style="overflow-x:auto">
+    <table class="marks-table">
+      <thead><tr>
+        <th style="width:40px">#</th>
+        <th>Student Name</th>
+        <th>Roll No</th>
+        <th>Department</th>
+        <th>Marks (/ ${maxM})</th>
+        <th>%</th>
+        <th style="width:30px"></th>
+      </tr></thead>
+      <tbody id="marksBody">
+        ${students.map((s, i) => {
+          const existing = s.existing_marks != null ? s.existing_marks : "";
+          return `<tr id="row_${s.id}">
+            <td style="color:#94a3b8;font-weight:600">${i+1}</td>
+            <td style="font-weight:600">${escapeHtml(s.name || "Student")}</td>
+            <td style="color:#64748b">${escapeHtml(s.roll_number || "—")}</td>
+            <td><span style="font-size:12px;background:#f1f5f9;padding:2px 8px;border-radius:99px;color:#475569">${escapeHtml(s.department || "—")}</span></td>
+            <td><input class="marks-input" type="number" id="marks_${s.id}" min="0" max="${maxM}" value="${existing}" placeholder="—" oninput="onMarksInput(this, ${s.id}, ${maxM})"></td>
+            <td id="pct_${s.id}" style="font-size:13px;font-weight:700;color:#94a3b8">—</td>
+            <td class="row-status" id="status_${s.id}"></td>
+          </tr>`;
+        }).join("")}
+      </tbody>
+    </table>
+    </div>`;
+
+  // Init existing values
+  students.forEach(s => {
+    if (s.existing_marks != null) {
+      const inp = document.getElementById("marks_" + s.id);
+      if (inp) onMarksInput(inp, s.id, maxM);
+    }
+  });
+  updateSummary();
+}
+
+function onMarksInput(inp, studentId, maxM) {
+  const val = parseFloat(inp.value);
+  const pctEl = document.getElementById("pct_" + studentId);
+  const statusEl = document.getElementById("status_" + studentId);
+
+  if (inp.value === "" || isNaN(val)) {
+    inp.classList.remove("valid","invalid");
+    if (pctEl) pctEl.innerHTML = "—";
+    if (statusEl) statusEl.textContent = "";
+  } else if (val < 0 || val > maxM) {
+    inp.classList.add("invalid"); inp.classList.remove("valid");
+    if (pctEl) pctEl.innerHTML = '<span style="color:#ef4444">!</span>';
+    if (statusEl) statusEl.textContent = "⚠️";
+  } else {
+    inp.classList.add("valid"); inp.classList.remove("invalid");
+    const pct = (val / maxM * 100).toFixed(1);
+    const color = pct >= 75 ? "#10b981" : pct >= 40 ? "#f59e0b" : "#ef4444";
+    if (pctEl) pctEl.innerHTML = `<span style="color:${color}">${pct}%</span>`;
+    if (statusEl) statusEl.textContent = "✓";
+  }
+  updateSummary();
+}
+
+function updateMaxDisplay() {
+  const maxM = parseInt(document.getElementById("maxMarks").value) || 100;
+  document.querySelectorAll(".marks-input").forEach(inp => {
+    inp.max = maxM;
+    inp.setAttribute("max", maxM);
+  });
+  // Re-render pct
+  _students.forEach(s => {
+    const inp = document.getElementById("marks_" + s.id);
+    if (inp && inp.value !== "") onMarksInput(inp, s.id, maxM);
+  });
+}
+
+function updateSummary() {
+  const maxM = parseInt(document.getElementById("maxMarks").value) || 100;
+  const vals = _students
+    .map(s => parseFloat(document.getElementById("marks_" + s.id)?.value))
+    .filter(v => !isNaN(v) && v >= 0 && v <= maxM);
+
+  setText("sumFilled", vals.length);
+  if (!vals.length) { setText("sumAvg","—"); setText("sumPass","—"); return; }
+  const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+  const pass = vals.filter(v => v/maxM >= 0.4).length;
+  setText("sumAvg", (avg/maxM*100).toFixed(1)+"%");
+  setText("sumPass", Math.round(pass/vals.length*100)+"%");
+}
+
+async function submitMarks(btn) {
+  if (!_subjectId) { showToast("Please select a subject first", "warning"); return; }
+  const maxM = parseInt(document.getElementById("maxMarks").value) || 100;
+  const examType = document.getElementById("examType").value;
+
+  const entries = _students
+    .map(s => {
+      const inp = document.getElementById("marks_" + s.id);
+      const val = inp ? parseFloat(inp.value) : NaN;
+      if (isNaN(val) || inp?.value === "") return null;
+      return { student_id: s.id, subject_id: _subjectId, marks: val, max_marks: maxM, exam_type: examType };
+    })
+    .filter(Boolean);
+
+  if (!entries.length) { showToast("Enter at least one mark before saving", "warning"); return; }
+
+  const hasInvalid = entries.some(e => e.marks < 0 || e.marks > maxM);
+  if (hasInvalid) { showToast("Fix invalid entries (red fields) before saving", "error"); return; }
+
+  setLoading(btn, true);
+  setText("submitStatus", "Saving " + entries.length + " entries…");
+
+  try {
+    const res = await fetchAuth("/faculty/marks/bulk", {
+      method: "POST",
+      body: JSON.stringify({ entries }),
+    });
+    if (!res.success) throw new Error(res.error);
+    showToast(`Saved ${res.saved} marks${res.failed ? ` (${res.failed} failed)` : ""}`, "success");
+    setText("submitStatus", `✓ ${res.saved} saved · ${res.failed || 0} failed`);
+    // Mark saved rows
+    (res.results || []).forEach(r => {
+      const statusEl = document.getElementById("status_" + r.student_id);
+      if (statusEl) statusEl.textContent = r.ok ? "✅" : "❌";
+    });
+  } catch (e) {
+    showToast(e.message || "Failed to save marks", "error");
+    setText("submitStatus", "");
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+function clearAll() {
+  _students.forEach(s => {
+    const inp = document.getElementById("marks_" + s.id);
+    if (inp) { inp.value = ""; inp.classList.remove("valid","invalid"); }
+    const pct = document.getElementById("pct_" + s.id);
+    if (pct) pct.textContent = "—";
+    const status = document.getElementById("status_" + s.id);
+    if (status) status.textContent = "";
+  });
+  updateSummary();
+}
+
+// Init: load departments
+async function initPage() {
+  try {
+    const res = await fetchAuth("/faculty/dashboard");
+    const depts = res.departments || res.data?.departments || [];
+    const sel = document.getElementById("deptSel");
+    depts.forEach(d => {
+      const opt = document.createElement("option");
+      opt.value = d; opt.textContent = d;
+      sel.appendChild(opt);
+    });
+  } catch (_) {}
+  await loadSubjects();
+}
+
+initPage();
+</script>
+{% endblock %}

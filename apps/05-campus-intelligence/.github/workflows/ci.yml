@@ -1,0 +1,160 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# CI Pipeline — Smart Campus Intelligence System
+# Runs on every push and pull-request to main / dev.
+# Jobs: lint → test → security-scan
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  # ── 1. Lint ─────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install lint dependencies
+        run: pip install ruff
+
+      - name: Run Ruff linter
+        run: ruff check . --output-format=github
+
+  # ── 2. Test ─────────────────────────────────────────────────────────────────
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+      fail-fast: false
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: smart_campus_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Test environment — all secrets are non-sensitive test values
+      DATABASE_URL:             "postgresql://test_user:test_pass@localhost:5432/smart_campus_test"
+      JWT_SECRET:               "ci-test-jwt-secret-not-used-in-production"
+      SECRET_KEY:               "ci-test-secret-key-not-used-in-production"
+      FLASK_ENV:                "testing"
+      FLASK_DEBUG:              "false"
+      STRICT_STARTUP_VALIDATION: "false"
+      AUTH_COOKIE_SECURE:       "false"
+      LOG_LEVEL:                "WARNING"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pytest
+        run: pytest -q --tb=short --color=yes
+
+      - name: Upload coverage report
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: htmlcov/
+          if-no-files-found: ignore
+
+  # ── 3. Security scan ─────────────────────────────────────────────────────────
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install Bandit
+        run: pip install bandit[toml]
+
+      - name: Run Bandit security scan
+        run: |
+          bandit -r . \
+            --exclude ./venv,./tests,./.git \
+            --severity-level medium \
+            --confidence-level medium \
+            -f json -o bandit-report.json || true
+          bandit -r . \
+            --exclude ./venv,./tests,./.git \
+            --severity-level high \
+            --confidence-level high
+
+      - name: Upload Bandit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-security-report
+          path: bandit-report.json
+          if-no-files-found: ignore
+
+  # ── 4. Encoding check ────────────────────────────────────────────────────────
+  encoding-check:
+    name: Encoding & Sanity Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for mojibake / broken chars in Python files
+        run: |
+          # Fail if any .py file contains common mojibake sequences
+          if grep -rn $'\xc3\xa2\xc2\x80\xc2\x99\|\xc3\xa2\xc2\x80\xc2\x93\|\xc3\xa2\xc2\x80\xc2\x94' --include="*.py" .; then
+            echo "FAIL: Mojibake characters found in Python source files"
+            exit 1
+          fi
+          echo "OK: No mojibake found"
+
+      - name: Verify .env.example has no real secrets
+        run: |
+          # .env.example must not contain real API keys or passwords
+          if grep -E "(sk-[a-zA-Z0-9]{32}|AIza[a-zA-Z0-9_-]{35})" .env.example 2>/dev/null; then
+            echo "FAIL: Possible real API key found in .env.example"
+            exit 1
+          fi
+          echo "OK: .env.example looks clean"

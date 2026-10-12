@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart Campus Intelligence{% endblock %}</title>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Modern Design System & Fonts -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='modern-design-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard-modern.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='components-advanced.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='fixes.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="dashboard-body">
+<script>
+// Restore dark mode before paint to prevent flash
+if (localStorage.getItem('dark_mode') === 'true') document.body.classList.add('dark-mode');
+</script>
+<div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar sidebar-premium">
+        <div class="sidebar-header">
+            <div class="sidebar-logo" id="sidebarLogo">
+                <i class="fas fa-graduation-cap" id="sidebarIcon"></i>
+            </div>
+            <h2>Smart<br>Campus</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <ul class="nav-menu">
+                {% block sidebar_nav %}{% endblock %}
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <button class="sidebar-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Theme">
+                <i class="fas fa-moon"></i>
+                <span>Theme</span>
+            </button>
+            <button class="logout-btn" onclick="logout()" title="Logout">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main main-premium">
+        <header class="topbar topbar-premium">
+            <div class="topbar-left">
+                <span class="breadcrumb">{% block breadcrumb %}Dashboard{% endblock %}</span>
+            </div>
+            <div class="topbar-center">
+                <h1 class="topbar-title" id="topbarTitle">{% block page_title %}Overview{% endblock %}</h1>
+            </div>
+            <div class="topbar-right">
+                <div class="user-info">
+                    <div class="user-avatar" id="topbarAvatar">
+                        <i class="fas fa-user" id="topbarAvatarIcon"></i>
+                    </div>
+                    <div class="user-details">
+                        <span class="user-name" id="topbarUserName">Loading…</span>
+                        <span class="user-role" id="topbarUserRole">User</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <div class="dashboard-content-wrapper">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</div>
+
+<script src="{{ url_for('static', filename='shared.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+{% block extra_js %}{% endblock %}
+
+<script>
+// Role-based sidebar icon + avatar icon
+(function () {
+    var role = (localStorage.getItem('role_name') || '').toLowerCase();
+    var name = localStorage.getItem('user_name') || localStorage.getItem('user_email') || 'User';
+    var email = localStorage.getItem('user_email') || '';
+
+    // Topbar name & role
+    var nameEl = document.getElementById('topbarUserName');
+    var roleEl = document.getElementById('topbarUserRole');
+    if (nameEl) nameEl.textContent = email || name;
+    if (roleEl) roleEl.textContent = role.charAt(0).toUpperCase() + role.slice(1) || 'User';
+
+    // Role-based topbar title personalisation
+    var titleEl = document.getElementById('topbarTitle');
+    if (titleEl && titleEl.textContent.trim() === 'Overview') {
+        var greeting = 'Welcome back, ' + (role.charAt(0).toUpperCase() + role.slice(1));
+        titleEl.textContent = greeting;
+    }
+
+    // Role icon in sidebar logo
+    var iconEl = document.getElementById('sidebarIcon');
+    var roleIcons = { student: 'fas fa-user-graduate', faculty: 'fas fa-chalkboard-user', admin: 'fas fa-crown' };
+    if (iconEl && roleIcons[role]) iconEl.className = roleIcons[role];
+
+    // Avatar icon per role
+    var avatarIcon = document.getElementById('topbarAvatarIcon');
+    var avatarIcons = { student: 'fas fa-user-graduate', faculty: 'fas fa-chalkboard-user', admin: 'fas fa-crown' };
+    if (avatarIcon && avatarIcons[role]) avatarIcon.className = avatarIcons[role];
+}());
+
+function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+    var isDark = document.body.classList.contains('dark-mode');
+    localStorage.setItem('dark_mode', isDark ? 'true' : 'false');
+    var icon = document.querySelector('#themeToggleBtn i');
+    if (icon) icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+}
+
+// Sync theme toggle icon on page load
+(function() {
+    var isDark = document.body.classList.contains('dark-mode');
+    var icon = document.querySelector('#themeToggleBtn i');
+    if (icon) icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+}());
+</script>
+</body>
+</html>

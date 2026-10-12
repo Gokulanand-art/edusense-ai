@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+
+{% block title %}My Goals - Smart Campus Intelligence{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='ai_assistant.css') }}">
+<style>
+    /* ── Goals Page Styles ─────────────────────────── */
+    .goals-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:1.25rem; }
+    .goal-card  { background:var(--card-light); border-radius:12px; padding:1.25rem; border:1px solid var(--border-light);
+                  box-shadow:var(--shadow-sm); transition:box-shadow .2s; position:relative; }
+    .goal-card:hover { box-shadow:var(--shadow-md); }
+
+    .goal-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:.75rem; }
+    .goal-title  { font-weight:600; font-size:1rem; margin:0; }
+    .goal-cat    { font-size:.75rem; padding:.2rem .6rem; border-radius:20px; background:var(--primary); color:#fff; white-space:nowrap; }
+    .goal-cat.health    { background:#16a34a; }
+    .goal-cat.skills    { background:#d97706; }
+    .goal-cat.career    { background:#7c3aed; }
+    .goal-cat.personal  { background:#0891b2; }
+
+    .goal-desc   { font-size:.875rem; color:var(--text-secondary); margin:.5rem 0 .75rem; min-height:1.5em; }
+
+    .goal-progress { margin-bottom:.75rem; }
+    .goal-progress-bar { height:8px; background:var(--border-light); border-radius:4px; overflow:hidden; }
+    .goal-progress-fill { height:100%; background:linear-gradient(90deg,var(--primary),var(--secondary)); border-radius:4px; transition:width .5s ease; }
+    .goal-progress-labels { display:flex; justify-content:space-between; font-size:.75rem; color:var(--text-secondary); margin-top:.3rem; }
+
+    .goal-meta   { display:flex; gap:.75rem; flex-wrap:wrap; font-size:.8rem; color:var(--text-secondary); margin-bottom:.75rem; }
+    .goal-meta span { display:flex; align-items:center; gap:.3rem; }
+
+    .goal-actions { display:flex; gap:.5rem; }
+    .btn-xs { padding:.3rem .65rem; font-size:.8rem; border-radius:6px; border:none; cursor:pointer; transition:.15s; }
+    .btn-xs.primary { background:var(--primary); color:#fff; }
+    .btn-xs.danger  { background:transparent; color:var(--danger); border:1px solid var(--danger); }
+    .btn-xs.ghost   { background:transparent; color:var(--text-secondary); border:1px solid var(--border-light); }
+    .btn-xs:hover   { opacity:.85; }
+
+    /* priority badges */
+    .priority-high   { color:#dc2626; font-weight:700; }
+    .priority-medium { color:#d97706; font-weight:600; }
+    .priority-low    { color:#16a34a; }
+
+    /* Status badges */
+    .status-badge { display:inline-block; font-size:.72rem; padding:.2rem .55rem; border-radius:20px; font-weight:600; }
+    .status-active    { background:#dbeafe; color:#1e40af; }
+    .status-completed { background:#dcfce7; color:#166534; }
+    .status-paused    { background:#fef3c7; color:#92400e; }
+    .status-cancelled { background:#fee2e2; color:#991b1b; }
+
+    /* Summary bar */
+    .summary-bar { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1rem; margin-bottom:1.5rem; }
+    .summary-stat { background:var(--card-light); border-radius:10px; padding:1rem; text-align:center;
+                    border:1px solid var(--border-light); box-shadow:var(--shadow-sm); }
+    .summary-stat .val { font-size:1.8rem; font-weight:700; color:var(--primary); }
+    .summary-stat .lbl { font-size:.8rem; color:var(--text-secondary); margin-top:.15rem; }
+
+    /* Badges */
+    .badge-list { display:flex; gap:.75rem; flex-wrap:wrap; }
+    .badge-item { display:flex; align-items:center; gap:.5rem; background:var(--bg-lighter);
+                  border-radius:8px; padding:.5rem .9rem; font-size:.85rem; border:1px solid var(--border-light); }
+    .badge-icon { font-size:1.4rem; }
+    .badge-earned { opacity:1; }
+    .badge-locked { opacity:.35; filter:grayscale(1); }
+
+    /* Modal */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000;
+                     display:flex; align-items:center; justify-content:center; padding:1rem; }
+    .modal-box { background:var(--card-light); border-radius:12px; padding:1.5rem; width:100%; max-width:480px;
+                 max-height:90vh; overflow-y:auto; }
+    .modal-title { font-size:1.1rem; font-weight:700; margin-bottom:1rem; }
+    .modal-actions { display:flex; gap:.75rem; justify-content:flex-end; margin-top:1rem; }
+    .hidden { display:none !important; }
+
+    .form-row { margin-bottom:.9rem; }
+    .form-row label { display:block; font-size:.85rem; font-weight:600; margin-bottom:.35rem; }
+    .form-row input, .form-row textarea, .form-row select {
+        width:100%; padding:.55rem .75rem; border:1px solid var(--border-light); border-radius:7px;
+        font-size:.9rem; background:var(--bg-lighter); color:var(--text-dark); }
+    .form-row input:focus, .form-row textarea:focus, .form-row select:focus {
+        outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(79,70,229,.15); }
+
+    /* empty state */
+    .empty-state { text-align:center; padding:3rem 1rem; color:var(--text-secondary); }
+    .empty-state .icon { font-size:3.5rem; margin-bottom:1rem; }
+    .empty-state p { font-size:1rem; margin-bottom:1.25rem; }
+
+    .milestone-list { list-style:none; padding:0; margin:.5rem 0; }
+    .milestone-list li { display:flex; align-items:center; gap:.5rem; padding:.3rem 0; font-size:.85rem;
+                         border-bottom:1px solid var(--border-light); }
+    .milestone-list li:last-child { border-bottom:none; }
+    .milestone-list input[type=checkbox] { width:16px; height:16px; cursor:pointer; }
+    .milestone-done { text-decoration:line-through; color:var(--text-secondary); }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}Tracking{% endblock %}
+{% block page_title %}Goal Crusher{% endblock %}
+
+{% block sidebar_nav %}
+<li class="nav-item" onclick="go('/student-dashboard')"><i class="fas fa-home nav-icon"></i><span>Dashboard</span></li>
+<li class="nav-item" onclick="go('/student-progress')"><i class="fas fa-chart-line nav-icon"></i><span>Progress</span></li>
+<li class="nav-item" onclick="go('/student-skills')"><i class="fas fa-star nav-icon"></i><span>Skills</span></li>
+<li class="nav-item" onclick="go('/student-profile')"><i class="fas fa-user-circle nav-icon"></i><span>Profile</span></li>
+<li class="nav-item active" onclick="go('/goals')"><i class="fas fa-bullseye nav-icon"></i><span>Goals</span></li>
+<li class="nav-item" onclick="go('/notifications')"><i class="fas fa-bell nav-icon"></i><span>Notifications</span></li>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-premium">
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 24px;">
+        <button class="btn btn-primary" onclick="openCreateModal()">
+            <i class="fas fa-plus"></i> New Goal
+        </button>
+    </div>
+
+    <!-- Summary bar -->
+    <div class="summary-bar" id="summaryBar">
+        <div class="summary-stat"><div class="val" id="totalGoals">—</div><div class="lbl">Total Goals</div></div>
+        <div class="summary-stat"><div class="val" id="activeGoals">—</div><div class="lbl">Active</div></div>
+        <div class="summary-stat"><div class="val" id="completedGoals">—</div><div class="lbl">Completed</div></div>
+        <div class="summary-stat"><div class="val" id="completionRate">—</div><div class="lbl">Completion Rate</div></div>
+    </div>
+
+    <!-- Badges -->
+    <div class="card card-premium" style="margin-bottom:1.5rem;" id="badgesCard">
+        <h3 class="card-title" style="margin-bottom:1rem;"><i class="fas fa-medal" style="color:#d97706;"></i> Badges Earned</h3>
+        <div class="badge-list" id="badgeList">
+            <span class="text-muted" style="font-size:.9rem;">Complete goals to earn badges!</span>
+        </div>
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="tabs" style="margin-bottom:1.25rem; display:flex; gap:.5rem; flex-wrap:wrap;">
+        <button class="btn-xs primary active-tab" onclick="filterGoals('all', this)">All</button>
+        <button class="btn-xs ghost" onclick="filterGoals('active', this)">Active</button>
+        <button class="btn-xs ghost" onclick="filterGoals('completed', this)">Completed</button>
+        <button class="btn-xs ghost" onclick="filterGoals('paused', this)">Paused</button>
+    </div>
+
+    <!-- Goals grid -->
+    <div class="goals-grid" id="goalsGrid">
+        <div class="empty-state" id="emptyState" style="grid-column:1/-1">
+            <div class="icon">🎯</div>
+            <p>No goals yet. Set your first goal to get started!</p>
+            <button class="btn btn-primary" onclick="openCreateModal()"><i class="fas fa-plus"></i> Create Goal</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Create / Edit Modal ─────────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="goalModal">
+    <div class="modal-box">
+        <div class="modal-title" id="modalTitle">New Goal</div>
+        <input type="hidden" id="editGoalId">
+
+        <div class="form-row">
+            <label>Title *</label>
+            <input type="text" id="gTitle" placeholder="e.g. Improve CGPA to 8.5" maxlength="200">
+        </div>
+        <div class="form-row">
+            <label>Description</label>
+            <textarea id="gDesc" rows="2" placeholder="What do you want to achieve?"></textarea>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:.75rem;">
+            <div class="form-row">
+                <label>Category</label>
+                <select id="gCategory">
+                    <option value="academic">Academic</option>
+                    <option value="skills">Skills</option>
+                    <option value="career">Career</option>
+                    <option value="health">Health</option>
+                    <option value="personal">Personal</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Priority</label>
+                <select id="gPriority">
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                    <option value="low">Low</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Target Value</label>
+                <input type="number" id="gTarget" placeholder="e.g. 85" step="0.01">
+            </div>
+            <div class="form-row">
+                <label>Unit</label>
+                <input type="text" id="gUnit" placeholder="e.g. %, marks, hours">
+            </div>
+        </div>
+        <div class="form-row">
+            <label>Target Date</label>
+            <input type="date" id="gDate">
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-xs ghost" onclick="closeModal()">Cancel</button>
+            <button class="btn-xs primary" id="saveGoalBtn" onclick="saveGoal()">Save Goal</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Progress Update Modal ──────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="progressModal">
+    <div class="modal-box">
+        <div class="modal-title">Update Progress</div>
+        <input type="hidden" id="progressGoalId">
+        <div class="form-row">
+            <label>Current Value <span id="progressUnit" style="color:var(--text-secondary);font-weight:400;"></span></label>
+            <input type="number" id="progressValue" placeholder="Enter current progress" step="0.01">
+        </div>
+        <p style="font-size:.85rem;color:var(--text-secondary);" id="progressHint"></p>
+        <!-- Milestones -->
+        <div id="msSection">
+            <h4 style="font-size:.9rem;margin:.75rem 0 .4rem;">Milestones</h4>
+            <ul class="milestone-list" id="msList"></ul>
+            <div style="display:flex;gap:.5rem;margin-top:.5rem;">
+                <input type="text" id="msInput" placeholder="Add milestone…" style="flex:1;padding:.4rem .6rem;border:1px solid var(--border-light);border-radius:6px;font-size:.85rem;background:var(--bg-lighter);">
+                <button class="btn-xs primary" onclick="addMilestone()">Add</button>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-xs ghost" onclick="closeProgressModal()">Close</button>
+            <button class="btn-xs primary" onclick="saveProgress()">Save Progress</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const API = '/api/goals';
+let allGoals = [];
+let currentFilter = 'all';
+
+async function loadSummary() {
+    try {
+        const d = await fetchAuth(`${API}/summary`);
+        if (d.success) {
+            const s = d.data;
+            document.getElementById('totalGoals').textContent = s.total;
+            document.getElementById('activeGoals').textContent = s.active;
+            document.getElementById('completedGoals').textContent = s.completed;
+            document.getElementById('completionRate').textContent = s.completion_rate + '%';
+            renderBadges(s.badges);
+        }
+    } catch(e) {}
+}
+
+function renderBadges(badges) {
+    const allBadges = [
+        {id:'first_goal',name:'Goal Setter',icon:'🎯',desc:'Created your first goal'},
+        {id:'on_track',name:'On Track',icon:'🚀',desc:'Completed 3 goals'},
+        {id:'achiever',name:'Achiever',icon:'🏆',desc:'Completed 5 goals'},
+        {id:'perfectionist',name:'Perfectionist',icon:'⭐',desc:'Completed 10 goals'},
+    ];
+    const earned = new Set((badges||[]).map(b=>b.id));
+    const list = document.getElementById('badgeList');
+    list.innerHTML = allBadges.map(b => `
+        <div class="badge-item ${earned.has(b.id)?'badge-earned':'badge-locked'}" title="${b.desc}">
+            <span class="badge-icon">${b.icon}</span>
+            <div><div style="font-weight:600;font-size:.82rem;">${b.name}</div>
+            <div style="font-size:.72rem;color:var(--text-secondary);">${earned.has(b.id)?'Earned':'Locked'}</div></div>
+        </div>
+    `).join('');
+}
+
+async function loadGoals(status = null) {
+    const url = status && status !== 'all' ? `${API}/?status=${status}` : `${API}/`;
+    try {
+        const d = await fetchAuth(url);
+        if (d.success) {
+            allGoals = d.data;
+            renderGoals(allGoals);
+        }
+    } catch(e) {}
+}
+
+function renderGoals(goals) {
+    const grid = document.getElementById('goalsGrid');
+    document.getElementById('emptyState').classList.toggle('hidden', goals.length > 0);
+    const cards = goals.map(g => {
+        const pct = g.progress_pct || 0;
+        const daysLeft = g.target_date ? Math.ceil((new Date(g.target_date) - new Date()) / 86400000) : null;
+        const daysHtml = daysLeft !== null
+            ? `<span style="color:${daysLeft < 7 ? 'var(--danger)' : 'var(--text-secondary)'}"><i class="fas fa-calendar-alt"></i> ${daysLeft < 0 ? 'Overdue' : daysLeft + ' days left'}</span>`
+            : '';
+        return `
+        <div class="goal-card">
+            <div class="goal-card-header">
+                <h4 class="goal-title">${escHtml(g.title)}</h4>
+                <span class="goal-cat ${g.category}">${g.category}</span>
+            </div>
+            ${g.description ? `<p class="goal-desc">${escHtml(g.description)}</p>` : '<p class="goal-desc" style="opacity:.4">No description</p>'}
+            ${g.target_value ? `
+            <div class="goal-progress">
+                <div class="goal-progress-bar"><div class="goal-progress-fill" style="width:${pct}%"></div></div>
+                <div class="goal-progress-labels"><span>${g.current_value} ${g.unit||''}</span><span>${pct}%</span><span>${g.target_value} ${g.unit||''}</span></div>
+            </div>` : ''}
+            <div class="goal-meta">
+                <span><span class="status-badge status-${g.status}">${g.status}</span></span>
+                <span class="priority-${g.priority}"><i class="fas fa-flag"></i> ${g.priority}</span>
+                ${daysHtml}
+            </div>
+            <div class="goal-actions">
+                <button class="btn-xs primary" onclick="openProgressModal(${g.id}, ${g.target_value||0}, '${g.unit||''}', ${g.current_value||0})">
+                    <i class="fas fa-chart-line"></i> Update
+                </button>
+                <button class="btn-xs ghost" onclick="openEditModal(${JSON.stringify(g).replace(/"/g,'&quot;')})">
+                    <i class="fas fa-pen"></i>
+                </button>
+                <button class="btn-xs danger" onclick="deleteGoal(${g.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+    grid.innerHTML = (goals.length ? cards : '') + document.getElementById('emptyState').outerHTML;
+    if (goals.length) document.getElementById('emptyState').classList.add('hidden');
+}
+
+function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function filterGoals(status, btn) {
+    currentFilter = status;
+    document.querySelectorAll('.tabs .btn-xs').forEach(b => b.classList.remove('active-tab', 'primary'));
+    btn.classList.add('active-tab', 'primary');
+    loadGoals(status);
+}
+
+// ── Create Modal ──────────────────────────────────────────────────────────────
+function openCreateModal() {
+    document.getElementById('modalTitle').textContent = 'New Goal';
+    document.getElementById('editGoalId').value = '';
+    ['gTitle','gDesc','gUnit'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('gTarget').value = '';
+    document.getElementById('gDate').value = '';
+    document.getElementById('gCategory').value = 'academic';
+    document.getElementById('gPriority').value = 'medium';
+    document.getElementById('goalModal').classList.remove('hidden');
+}
+
+function openEditModal(g) {
+    document.getElementById('modalTitle').textContent = 'Edit Goal';
+    document.getElementById('editGoalId').value = g.id;
+    document.getElementById('gTitle').value = g.title;
+    document.getElementById('gDesc').value = g.description || '';
+    document.getElementById('gCategory').value = g.category;
+    document.getElementById('gPriority').value = g.priority;
+    document.getElementById('gTarget').value = g.target_value || '';
+    document.getElementById('gUnit').value = g.unit || '';
+    document.getElementById('gDate').value = g.target_date ? g.target_date.split('T')[0] : '';
+    document.getElementById('goalModal').classList.remove('hidden');
+}
+
+function closeModal() { document.getElementById('goalModal').classList.add('hidden'); }
+
+async function saveGoal() {
+    const editId = document.getElementById('editGoalId').value;
+    const payload = {
+        title:        document.getElementById('gTitle').value.trim(),
+        description:  document.getElementById('gDesc').value.trim(),
+        category:     document.getElementById('gCategory').value,
+        priority:     document.getElementById('gPriority').value,
+        target_value: document.getElementById('gTarget').value || null,
+        unit:         document.getElementById('gUnit').value.trim(),
+        target_date:  document.getElementById('gDate').value || null,
+    };
+    if (!payload.title) return alert('Title is required');
+    const url  = editId ? `${API}/${editId}` : `${API}/`;
+    const meth = editId ? 'PUT' : 'POST';
+    const d = await fetchAuth(url, { method: meth, body: JSON.stringify(payload) });
+    if (d.success) { closeModal(); loadGoals(currentFilter); loadSummary(); }
+    else alert(d.message || 'Error saving goal');
+}
+
+async function deleteGoal(id) {
+    if (!confirm('Delete this goal?')) return;
+    const d = await fetchAuth(`${API}/${id}`, { method: 'DELETE' });
+    if (d.success) { loadGoals(currentFilter); loadSummary(); }
+}
+
+// ── Progress Modal ────────────────────────────────────────────────────────────
+async function openProgressModal(id, target, unit, current) {
+    document.getElementById('progressGoalId').value = id;
+    document.getElementById('progressUnit').textContent = unit ? `(${unit})` : '';
+    document.getElementById('progressValue').value = current;
+    document.getElementById('progressHint').textContent = target ? `Target: ${target} ${unit}` : '';
+    document.getElementById('progressModal').classList.remove('hidden');
+    await loadMilestones(id);
+}
+
+function closeProgressModal() { document.getElementById('progressModal').classList.add('hidden'); }
+
+async function saveProgress() {
+    const id  = document.getElementById('progressGoalId').value;
+    const val = parseFloat(document.getElementById('progressValue').value);
+    if (isNaN(val)) return alert('Please enter a valid number');
+    const d = await fetchAuth(`${API}/${id}/progress`, {
+        method: 'PATCH', body: JSON.stringify({ current_value: val })
+    });
+    if (d.success) { closeProgressModal(); loadGoals(currentFilter); loadSummary(); if (d.message.includes('🎉')) alert(d.message); }
+    else alert(d.message);
+}
+
+async function loadMilestones(goalId) {
+    const d = await fetchAuth(`${API}/${goalId}/milestones`);
+    const list = document.getElementById('msList');
+    if (d.success && d.data.length) {
+        list.innerHTML = d.data.map(m => `
+            <li>
+                <input type="checkbox" ${m.is_done?'checked':''} onchange="toggleMs(${m.id})">
+                <span class="${m.is_done?'milestone-done':''}">${escHtml(m.title)}</span>
+            </li>`).join('');
+    } else {
+        list.innerHTML = '<li style="color:var(--text-secondary);font-size:.8rem;">No milestones yet.</li>';
+    }
+}
+
+async function addMilestone() {
+    const goalId = document.getElementById('progressGoalId').value;
+    const title  = document.getElementById('msInput').value.trim();
+    if (!title) return;
+    await fetchAuth(`${API}/${goalId}/milestones`, {
+        method:'POST', body:JSON.stringify({title})
+    });
+    document.getElementById('msInput').value = '';
+    loadMilestones(goalId);
+}
+
+async function toggleMs(id) {
+    await fetchAuth(`${API}/milestones/${id}/toggle`, { method:'PATCH' });
+    loadMilestones(document.getElementById('progressGoalId').value);
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+    loadSummary();
+    loadGoals();
+});
+</script>
+<script src="{{ url_for('static', filename='ai_assistant.js') }}"></script>
+{% endblock %}

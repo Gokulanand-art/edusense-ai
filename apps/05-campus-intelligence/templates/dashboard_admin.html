@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Smart Campus Intelligence{% endblock %}
+
+{% block breadcrumb %}Administration{% endblock %}
+{% block page_title %}System Control Center{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='ai-assistant-modern.css') }}">
+<style>
+    .dashboard-premium section,
+    .dashboard-premium .card { scroll-margin-top: 100px; }
+</style>
+{% endblock %}
+
+{% block sidebar_nav %}
+<li class="nav-item active" onclick="go('/admin-dashboard')">
+    <i class="fas fa-home nav-icon"></i>
+    <span>Dashboard</span>
+    <span class="nav-badge"></span>
+</li>
+<li class="nav-item" onclick="go('/placement/dashboard')">
+    <i class="fas fa-briefcase nav-icon"></i>
+    <span>Placements</span>
+    <span class="nav-badge" style="background:#10b981">NEW</span>
+</li>
+<li class="nav-item" onclick="go('/leaderboard')">
+    <i class="fas fa-trophy nav-icon"></i>
+    <span>Leaderboard</span>
+</li>
+<li class="nav-item" onclick="focusAdminSection('usersSection', event)">
+    <i class="fas fa-users-cog nav-icon"></i>
+    <span>Users</span>
+</li>
+<li class="nav-item" onclick="focusAdminSection('noticesSection', event)">
+    <i class="fas fa-bullhorn nav-icon"></i>
+    <span>Notice Board</span>
+</li>
+<li class="nav-item" onclick="focusAdminSection('adminMediaSection', event)">
+    <i class="fas fa-folder nav-icon"></i>
+    <span>Files</span>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-premium">
+    <!-- Section Header -->
+    <div class="section-header">
+        <div>
+            <h2 class="section-title">Admin Overview</h2>
+            <p class="section-subtitle">Monitor system health and manage institution-wide entities.</p>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="loadAdminDashboard()">
+            <i class="fas fa-sync"></i>
+            <span>Refresh Data</span>
+        </button>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="stats-grid" style="margin-bottom: 32px;">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">Total Students</p>
+                <p class="stat-value" id="adminTotalStudents">0</p>
+            </div>
+        </div>
+
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon"><i class="fas fa-chalkboard-user"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">Total Faculty</p>
+                <p class="stat-value" id="adminTotalFaculty">0</p>
+            </div>
+        </div>
+
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">Total Users</p>
+                <p class="stat-value" id="adminTotalUsers">0</p>
+            </div>
+        </div>
+
+        <div class="stat-card stat-card-success" onclick="go('/placement/dashboard')" style="cursor:pointer" title="Open Placement Dashboard">
+            <div class="stat-icon"><i class="fas fa-briefcase"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">Placement Rate</p>
+                <p class="stat-value" id="adminPlacementRate">—</p>
+                <p class="stat-sub" id="adminPlacementSub" style="font-size:11px;color:#64748b">Click to view full analytics</p>
+            </div>
+        </div>
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon"><i class="fas fa-database"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">Last Sync</p>
+                <p class="stat-value" id="adminLastSync">--</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-2col" style="margin-bottom: 32px;">
+        <div class="card card-premium">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-building"></i> Institution Context</h3>
+                <p class="card-subtitle">Current tenant, plan, and SaaS entitlements</p>
+            </div>
+            <div class="card-body">
+                <div class="profile-row"><span>Name</span><strong id="adminInstitutionName">--</strong></div>
+                <div class="profile-row"><span>Code</span><strong id="adminInstitutionCode">--</strong></div>
+                <div class="profile-row"><span>Plan</span><strong id="adminInstitutionPlan">--</strong></div>
+                <div class="profile-row"><span>Status</span><strong id="adminInstitutionStatus">--</strong></div>
+                <div class="profile-row"><span>Users</span><strong id="adminInstitutionUsers">0</strong></div>
+                <div class="profile-row"><span>Students</span><strong id="adminInstitutionStudents">0</strong></div>
+                <div class="profile-row"><span>Notices</span><strong id="adminInstitutionNotices">0</strong></div>
+            </div>
+        </div>
+
+        <div class="card card-premium">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-sparkles"></i> Enabled Features</h3>
+                <p class="card-subtitle">What this plan unlocks today</p>
+            </div>
+            <div class="card-body">
+                <ul id="adminInstitutionFeatures" class="profile-list">
+                    <li>Loading features...</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics & Operations -->
+    <div class="grid-2col" style="margin-bottom: 32px;">
+        <div class="card card-premium">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-search"></i> Search Users</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <input class="form-control" id="adminAnalyticsSearch" type="search" placeholder="Type name or roll no...">
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-premium">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-filter"></i> Department Filter</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <select class="form-control" id="adminAnalyticsDepartmentFilter">
+                        <option value="All">All Departments</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notices Section -->
+    <div class="card card-premium" id="noticesSection" style="margin-bottom: 32px;">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-bullhorn"></i> Campus Notice Board</h3>
+            <p class="card-subtitle">Broadcast official announcements to Faculty or Students</p>
+        </div>
+        <div class="card-body">
+            <form class="form-grid" onsubmit="submitAdminNotice(event)" style="margin-bottom: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="form-group" style="grid-column: span 2;">
+                    <label for="adminNoticeTitle" class="form-label">Notice Title</label>
+                    <input class="form-control" id="adminNoticeTitle" type="text" placeholder="e.g. End Semester Exam Schedule" required>
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label for="adminNoticeContent" class="form-label">Content</label>
+                    <textarea class="form-control" id="adminNoticeContent" rows="4" placeholder="Type the full notice message here..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="adminNoticeTarget" class="form-label">Target Audience</label>
+                    <select class="form-control" id="adminNoticeTarget" required>
+                        <option value="All">All Roles</option>
+                        <option value="Faculty">Faculty Only</option>
+                        <option value="Student">Students Only</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="adminNoticePublishAt" class="form-label">Publish At</label>
+                    <input class="form-control" id="adminNoticePublishAt" type="datetime-local">
+                </div>
+                <div class="form-group">
+                    <label for="adminNoticeExpiresAt" class="form-label">Expires At</label>
+                    <input class="form-control" id="adminNoticeExpiresAt" type="datetime-local">
+                </div>
+                <div class="form-group">
+                    <label for="adminNoticePinned" class="form-label">Pin Notice</label>
+                    <select class="form-control" id="adminNoticePinned">
+                        <option value="false">Standard Priority</option>
+                        <option value="true">Pinned Priority</option>
+                    </select>
+                </div>
+                <div class="form-group" style="display: flex; align-items: flex-end;">
+                    <button class="btn btn-primary btn-block" type="submit">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Publish Notice</span>
+                    </button>
+                </div>
+            </form>
+
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Title</th>
+                            <th>Target</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminNoticesTable">
+                        <tr><td colspan="4" style="text-align: center;">Loading notices...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-premium" id="superAdminSection" hidden style="margin-bottom: 32px;">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-layer-group"></i> Multi-Campus Control</h3>
+            <p class="card-subtitle">Create and review tenant accounts from one place.</p>
+        </div>
+        <div class="card-body">
+            <form onsubmit="submitInstitution(event)" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+                <input class="form-control" id="adminInstitutionFormName" type="text" placeholder="Institution name" required>
+                <input class="form-control" id="adminInstitutionFormCode" type="text" placeholder="Code" required>
+                <input class="form-control" id="adminInstitutionFormSubdomain" type="text" placeholder="Subdomain">
+                <select class="form-control" id="adminInstitutionFormPlan">
+                    <option value="starter">Starter</option>
+                    <option value="growth">Growth</option>
+                    <option value="enterprise">Enterprise</option>
+                </select>
+                <button class="btn btn-primary" type="submit" style="grid-column: span 4;">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Create Institution</span>
+                </button>
+            </form>
+
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Code</th>
+                            <th>Plan</th>
+                            <th>Users</th>
+                            <th>Students</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminInstitutionsTable">
+                        <tr><td colspan="6" style="text-align: center;">Loading institutions...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% set media_section_id = 'adminMediaSection' %}
+    {% set media_title = 'Admin Files' %}
+    {% set media_subtitle = 'Upload institution reports, circulars, and operational documents' %}
+    {% include 'partials/media_panel.html' %}
+
+    <!-- Additional sections like Users, Departments etc. can be kept or simplified -->
+    <div class="card card-premium" id="usersSection">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-users-cog"></i> User Management</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminUsersTable">
+                        <tr><td colspan="4" style="text-align: center;">Loading users...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='admin.js') }}"></script>
+<script>
+    loadAdminDashboard();
+
+    // Smooth scroll and focus for admin sections
+    function focusAdminSection(id, event) {
+        const elem = document.getElementById(id);
+        if (elem) {
+            elem.scrollIntoView({ behavior: 'smooth' });
+            elem.classList.add('premium-glow-pulse');
+            setTimeout(() => elem.classList.remove('premium-glow-pulse'), 2000);
+        }
+        if (event && event.currentTarget) {
+            document.querySelectorAll('.sidebar-nav .nav-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+    }
+    
+    // Notice Board logic
+    async function loadAdminNotices() {
+        const tbody = document.getElementById('adminNoticesTable');
+        try {
+            const res = await fetchAuth('/api/notices');
+            if (res.data) {
+                if (res.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">No notices published yet.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = res.data.map(n => `
+                    <tr>
+                        <td>${new Date(n.created_at).toLocaleDateString()}</td>
+                        <td><strong>${n.is_pinned ? 'Pinned: ' : ''}${n.title}</strong></td>
+                        <td><span class="badge ${n.target_role === 'All' ? 'bg-primary' : 'bg-secondary'}">${n.target_role}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteAdminNotice(${n.id})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        } catch (e) {
+            console.error(e);
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center">Failed to load notices</td></tr>';
+        }
+    }
+
+    async function submitAdminNotice(e) {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        setLoading(btn, true);
+        try {
+            const data = {
+                title: document.getElementById('adminNoticeTitle').value,
+                content: document.getElementById('adminNoticeContent').value,
+                target_role: document.getElementById('adminNoticeTarget').value,
+                is_pinned: document.getElementById('adminNoticePinned').value === 'true',
+                publish_at: document.getElementById('adminNoticePublishAt').value || null,
+                expires_at: document.getElementById('adminNoticeExpiresAt').value || null
+            };
+            const res = await fetchAuth('/api/notices', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+            if (res.error) throw new Error(res.error);
+            showToast(res.message, 'success');
+            e.target.reset();
+            loadAdminNotices();
+        } catch (error) {
+            showToast(error.message, 'error');
+        } finally {
+            setLoading(btn, false);
+        }
+    }
+
+    async function deleteAdminNotice(id) {
+        if (!confirm('Are you sure you want to delete this notice?')) return;
+        try {
+            const res = await fetchAuth('/api/notices/' + id, { method: 'DELETE' });
+            if (res.error) throw new Error(res.error);
+            showToast('Notice deleted', 'success');
+            loadAdminNotices();
+        } catch (e) {
+            showToast(e.message, 'error');
+        }
+    }
+
+    setTimeout(loadAdminNotices, 500);
+</script>
+{% endblock %}

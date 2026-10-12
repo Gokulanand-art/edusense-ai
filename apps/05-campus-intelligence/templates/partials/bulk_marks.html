@@ -1,0 +1,220 @@
+<!-- Bulk Marks Entry Panel — included in faculty dashboard -->
+<!-- Faculty selects a subject, class loads, they enter marks row-by-row, then submit all at once -->
+<div id="bulkMarksPanel" style="display:none">
+<div class="section-header" style="margin-bottom:20px">
+  <div>
+    <h2 class="section-title">Bulk Marks Entry</h2>
+    <p class="section-subtitle">Enter marks for all students in one go — spreadsheet style.</p>
+  </div>
+  <button class="btn btn-outline btn-sm" onclick="hideBulkMarks()"><i class="fas fa-times"></i> Close</button>
+</div>
+
+<div style="background:var(--card-bg,#fff);border-radius:16px;padding:24px;border:1px solid var(--border-color,#e2e8f0);margin-bottom:20px">
+  <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:14px;align-items:end">
+    <div>
+      <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b;display:block;margin-bottom:6px">Subject</label>
+      <select id="bmSubjectSelect" style="width:100%;padding:10px 14px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:14px;background:var(--input-bg,#f8fafc)" onchange="loadBulkStudents()">
+        <option value="">— Select Subject —</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b;display:block;margin-bottom:6px">Exam Type</label>
+      <select id="bmExamType" style="width:100%;padding:10px 14px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:14px;background:var(--input-bg,#f8fafc)">
+        <option value="internal">Internal</option>
+        <option value="midterm">Mid-Term</option>
+        <option value="final">Final</option>
+        <option value="assignment">Assignment</option>
+        <option value="quiz">Quiz</option>
+      </select>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="fillAllMarks()" title="Set same value for all"><i class="fas fa-fill-drip"></i> Fill All</button>
+  </div>
+</div>
+
+<div id="bmGrid" style="background:var(--card-bg,#fff);border-radius:16px;border:1px solid var(--border-color,#e2e8f0);overflow:hidden;margin-bottom:16px">
+  <div style="text-align:center;padding:48px;color:#94a3b8">Select a subject to load students.</div>
+</div>
+
+<div style="display:flex;gap:12px;align-items:center">
+  <button class="btn btn-primary" id="bmSaveBtn" onclick="saveBulkMarks(this)" disabled>
+    <i class="fas fa-save"></i> Save All Marks
+  </button>
+  <span id="bmStatusMsg" style="font-size:13px;color:#64748b"></span>
+</div>
+</div>
+
+<script>
+let _bmStudents = [];
+let _bmSubjectId = null;
+
+async function initBulkMarksPanel() {
+  try {
+    const res = await fetchAuth("/subjects");
+    const subjects = res.data || res.subjects || res || [];
+    const sel = document.getElementById("bmSubjectSelect");
+    if (!subjects.length) return;
+    subjects.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.id || s.subject_id;
+      opt.textContent = s.name || s.subject_name;
+      sel.appendChild(opt);
+    });
+  } catch (_) {}
+}
+
+async function loadBulkStudents() {
+  const sel = document.getElementById("bmSubjectSelect");
+  _bmSubjectId = sel.value ? parseInt(sel.value) : null;
+  const grid = document.getElementById("bmGrid");
+  const saveBtn = document.getElementById("bmSaveBtn");
+
+  if (!_bmSubjectId) {
+    grid.innerHTML = '<div style="text-align:center;padding:48px;color:#94a3b8">Select a subject to load students.</div>';
+    saveBtn.disabled = true;
+    return;
+  }
+
+  grid.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8"><i class="fas fa-spinner fa-spin"></i> Loading students…</div>';
+
+  try {
+    const res = await fetchAuth("/students?per_page=200");
+    _bmStudents = res.data || res.students || [];
+
+    // Also fetch existing marks for this subject to pre-fill
+    let existingMarks = {};
+    try {
+      const mRes = await fetchAuth(`/marks?subject_id=${_bmSubjectId}&per_page=500`);
+      const marks = mRes.data || mRes.marks || [];
+      marks.forEach(m => { existingMarks[m.student_id] = m.marks; });
+    } catch (_) {}
+
+    if (!_bmStudents.length) {
+      grid.innerHTML = '<div style="text-align:center;padding:48px;color:#94a3b8">No students found. Import students first.</div>';
+      return;
+    }
+
+    let html = `<table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="background:var(--bg-secondary,#f8fafc)">
+          <th style="padding:10px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;color:#64748b;text-align:left;border-bottom:2px solid #e2e8f0">Student</th>
+          <th style="padding:10px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;color:#64748b;text-align:left;border-bottom:2px solid #e2e8f0">Roll No.</th>
+          <th style="padding:10px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;color:#64748b;text-align:left;border-bottom:2px solid #e2e8f0">Dept</th>
+          <th style="padding:10px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;color:#64748b;text-align:right;border-bottom:2px solid #e2e8f0">Marks (0–100)</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+    _bmStudents.forEach(s => {
+      const sid  = s.id || s.student_id;
+      const prev = existingMarks[sid] !== undefined ? existingMarks[sid] : "";
+      html += `<tr>
+        <td style="padding:10px 16px;border-bottom:1px solid #f1f5f9;font-weight:600;font-size:14px">${escapeHtml(s.name||"Unknown")}</td>
+        <td style="padding:10px 16px;border-bottom:1px solid #f1f5f9;font-size:13px;color:#64748b">${escapeHtml(s.roll_number||"—")}</td>
+        <td style="padding:10px 16px;border-bottom:1px solid #f1f5f9;font-size:13px;color:#64748b">${escapeHtml(s.department||"—")}</td>
+        <td style="padding:10px 16px;border-bottom:1px solid #f1f5f9;text-align:right">
+          <input type="number" min="0" max="100" step="1"
+            class="bm-marks-input"
+            data-student-id="${sid}"
+            value="${prev}"
+            placeholder="—"
+            style="width:80px;padding:7px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:14px;font-weight:600;text-align:center;background:var(--input-bg,#f8fafc)"
+            oninput="validateMarksInput(this)"
+            onkeydown="bmHandleKey(event, this)">
+        </td>
+      </tr>`;
+    });
+
+    html += '</tbody></table>';
+    grid.innerHTML = html;
+    saveBtn.disabled = false;
+    setText("bmStatusMsg", `${_bmStudents.length} students loaded`);
+  } catch (e) {
+    grid.innerHTML = `<div style="text-align:center;padding:48px;color:#ef4444">Failed to load students: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function validateMarksInput(input) {
+  const v = parseInt(input.value);
+  if (input.value === "") { input.style.borderColor = "#e2e8f0"; return; }
+  if (isNaN(v) || v < 0 || v > 100) {
+    input.style.borderColor = "#ef4444";
+  } else {
+    input.style.borderColor = "#10b981";
+  }
+}
+
+function bmHandleKey(e, input) {
+  // Tab / Enter moves to next row
+  if (e.key === "Enter" || e.key === "Tab") {
+    e.preventDefault();
+    const inputs = Array.from(document.querySelectorAll(".bm-marks-input"));
+    const idx = inputs.indexOf(input);
+    if (idx < inputs.length - 1) inputs[idx + 1].focus();
+  }
+}
+
+function fillAllMarks() {
+  const val = prompt("Enter marks to fill for all students (0-100):");
+  if (val === null) return;
+  const n = parseInt(val);
+  if (isNaN(n) || n < 0 || n > 100) { showToast("Invalid value (must be 0–100)", "warning"); return; }
+  document.querySelectorAll(".bm-marks-input").forEach(inp => {
+    inp.value = n;
+    inp.style.borderColor = "#10b981";
+  });
+}
+
+async function saveBulkMarks(btn) {
+  const subjectId = _bmSubjectId;
+  if (!subjectId) { showToast("Select a subject first", "warning"); return; }
+
+  const examType = document.getElementById("bmExamType").value;
+  const inputs   = document.querySelectorAll(".bm-marks-input");
+  const entries  = [];
+
+  inputs.forEach(inp => {
+    const val = inp.value.trim();
+    if (val === "") return;  // skip empty = no marks for this student
+    const m = parseInt(val);
+    if (!isNaN(m) && m >= 0 && m <= 100) {
+      entries.push({
+        student_id: parseInt(inp.dataset.studentId),
+        subject_id: subjectId,
+        marks: m,
+        exam_type: examType,
+      });
+    }
+  });
+
+  if (!entries.length) { showToast("No marks to save. Fill in at least one row.", "warning"); return; }
+
+  setLoading(btn, true);
+  try {
+    const res = await fetchAuth("/marks/bulk", {
+      method: "POST",
+      body: JSON.stringify({ entries }),
+    });
+    if (!res.success) throw new Error(res.error);
+    showToast(`${res.saved} marks saved!${res.failed?.length ? " " + res.failed.length + " failed." : ""}`, "success");
+    setText("bmStatusMsg", `✓ ${res.message}`);
+    loadBulkStudents();  // reload to show updated values
+  } catch (e) {
+    showToast(e.message || "Save failed", "error");
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+function showBulkMarks() {
+  document.getElementById("bulkMarksPanel").style.display = "block";
+  document.getElementById("bulkMarksPanel").scrollIntoView({ behavior: "smooth" });
+  if (!document.getElementById("bmSubjectSelect").options.length > 1) initBulkMarksPanel();
+}
+
+function hideBulkMarks() {
+  document.getElementById("bulkMarksPanel").style.display = "none";
+}
+
+// Auto-init
+initBulkMarksPanel();
+</script>

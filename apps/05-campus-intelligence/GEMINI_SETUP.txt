@@ -1,0 +1,40 @@
+"""
+GEMINI API KEY SETUP GUIDE
+===========================
+
+Your current issue: Free tier API key quota exceeded
+
+SOLUTION: Get a paid API key with billing enabled
+
+Steps to get a working API key:
+
+1. Go to: https://ai.google.dev/
+2. Click "Get API Key" button
+3. Create or select a Google Cloud project
+4. Enable the Generative Language API
+5. Create an API key
+6. IMPORTANT: Set up billing at https://console.cloud.google.com/billing
+   - Add a payment method
+   - Ensure billing is enabled for the Gemini API project
+
+7. Copy your API key
+
+8. Update .env:
+   GEMINI_API_KEY=your-new-api-key-here
+
+9. Restart your Flask app
+
+The free tier has strict quotas:
+- Limited requests per minute
+- Limited tokens per minute
+- Quota resets daily
+
+Once you enable billing, you get much higher limits:
+- 1,500,000 tokens per minute
+- 50,000 requests per minute
+- (Charges only for usage)
+
+For development, a paid API key is strongly recommended.
+"""
+
+print(__doc__)

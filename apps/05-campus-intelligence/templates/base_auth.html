@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart Campus{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Modern Design System -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='modern-design-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='components-advanced.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='fixes.css') }}">
+    <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-base, 'Inter', sans-serif); overflow: hidden; }
+
+    .auth-page {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    /* Left — gradient branding panel */
+    .auth-brand {
+        background: linear-gradient(135deg, var(--primary-600, #3b82f6) 0%, var(--info, #06b6d4) 100%);
+        display: flex; align-items: center; justify-content: center;
+        padding: 48px 40px; position: relative; overflow: hidden;
+        color: #fff;
+    }
+    /* Decorative circles */
+    .auth-brand::before {
+        content: ''; position: absolute;
+        top: -20%; right: -15%; width: 420px; height: 420px;
+        background: rgba(255,255,255,.12); border-radius: 50%;
+    }
+    .auth-brand::after {
+        content: ''; position: absolute;
+        bottom: -25%; left: -10%; width: 360px; height: 360px;
+        background: rgba(255,255,255,.08); border-radius: 50%;
+    }
+    .auth-brand-inner { position: relative; z-index: 1; text-align: center; max-width: 380px; }
+    .brand-icon-wrap {
+        width: 96px; height: 96px; border-radius: 50%;
+        background: rgba(255,255,255,.15);
+        border: 2px solid rgba(255,255,255,.3);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 44px; margin: 0 auto 24px;
+    }
+    .brand-name { font-size: 34px; font-weight: 800; margin-bottom: 4px; }
+    .brand-tag  { font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; opacity: .75; margin-bottom: 40px; }
+    .brand-features { display: flex; flex-direction: column; gap: 16px; text-align: left; }
+    .brand-feature {
+        display: flex; align-items: center; gap: 14px;
+        background: rgba(255,255,255,.12); border-radius: 10px;
+        padding: 12px 16px; backdrop-filter: blur(4px);
+    }
+    .brand-feature-icon {
+        width: 38px; height: 38px; border-radius: 8px;
+        background: rgba(255,255,255,.15);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 17px; flex-shrink: 0;
+    }
+    .brand-feature-text strong { display: block; font-size: 14px; font-weight: 600; }
+    .brand-feature-text span   { font-size: 12px; opacity: .8; }
+
+    /* Right — white form panel */
+    .auth-form-panel {
+        background: #f8fafc; display: flex;
+        align-items: center; justify-content: center;
+        padding: 32px; overflow-y: auto;
+    }
+    .auth-card {
+        background: #fff; border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0,0,0,.08);
+        padding: 40px 36px; width: 100%; max-width: 420px;
+        animation: authIn .35s ease;
+    }
+    @keyframes authIn { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+    .auth-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #f1f5f9; border-radius: 20px;
+        padding: 5px 12px; font-size: 12px; font-weight: 600;
+        color: #475569; margin-bottom: 18px;
+    }
+    .auth-card h2 { font-size: 26px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+    .auth-card .auth-sub { font-size: 13px; color: #64748b; margin-bottom: 28px; }
+
+    /* Form fields */
+    .field-label {
+        display: flex; align-items: center; gap: 4px;
+        font-size: 11.5px; font-weight: 700; color: #475569;
+        text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px;
+    }
+    .field-label .required { color: #ef4444; }
+    .field-wrap { position: relative; margin-bottom: 18px; }
+    .field-wrap .field-icon {
+        position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+        color: #94a3b8; font-size: 15px; pointer-events: none;
+    }
+    .field-input {
+        width: 100%; padding: 11px 13px 11px 40px;
+        border: 1.5px solid #e2e8f0; border-radius: 9px;
+        font-size: 14px; color: #0f172a; background: #fff;
+        transition: border-color .2s, box-shadow .2s; outline: none;
+        box-sizing: border-box;
+    }
+    .field-input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+    .field-input::placeholder { color: #cbd5e1; }
+    .toggle-pw {
+        position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+        color: #94a3b8; cursor: pointer; font-size: 15px; background: none; border: none;
+    }
+    .toggle-pw:hover { color: #4f46e5; }
+    select.field-input { cursor: pointer; padding-right: 32px; appearance: none; }
+    .select-arrow {
+        position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+        color: #94a3b8; pointer-events: none; font-size: 12px;
+    }
+
+    /* Options row */
+    .auth-options { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; font-size: 13px; }
+    .remember-wrap { display: flex; align-items: center; gap: 7px; cursor: pointer; color: #475569; margin-bottom: 0; }
+    .remember-wrap input { accent-color: #4f46e5; width: 15px; height: 15px; margin: 0; position: relative; top: 1px; }
+    .forgot-link { color: #4f46e5; text-decoration: none; font-weight: 500; }
+    .forgot-link:hover { text-decoration: underline; }
+
+    /* Submit button */
+    .auth-btn {
+        width: 100%; padding: 13px; border-radius: 9px;
+        background: linear-gradient(135deg, #4f46e5, #6366f1);
+        color: #fff; font-size: 15px; font-weight: 700;
+        border: none; cursor: pointer; display: flex;
+        align-items: center; justify-content: center; gap: 8px;
+        transition: opacity .2s, transform .15s; margin-bottom: 20px;
+    }
+    .auth-btn:hover { opacity: .92; transform: translateY(-1px); }
+    .auth-btn:active { transform: scale(.98); }
+
+    /* Divider */
+    .auth-divider-line { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; color: #94a3b8; font-size: 13px; }
+    .auth-divider-line::before, .auth-divider-line::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+
+    /* Secondary button */
+    .auth-btn-secondary {
+        width: 100%; padding: 12px; border-radius: 9px;
+        background: #fff; color: #4f46e5; font-size: 14px;
+        font-weight: 700; border: 1.5px solid #4f46e5;
+        cursor: pointer; display: flex; align-items: center;
+        justify-content: center; gap: 8px; transition: all .2s;
+        margin-bottom: 14px;
+    }
+    .auth-btn-secondary:hover { background: #f5f3ff; }
+
+    /* Message alert */
+    .auth-alert { display: none; padding: 10px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; margin-top: 14px; margin-bottom: 16px; position: relative; z-index: 10; }
+    .auth-alert.error   { display: block; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .auth-alert.success { display: block; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+
+    /* Help link */
+    .auth-help { text-align: center; font-size: 12px; color: #94a3b8; margin-top: 10px; }
+    .auth-help a { color: #4f46e5; text-decoration: none; font-weight: 600; }
+
+    /* Hidden field */
+    .field-hidden { display: none; }
+
+    /* Responsive */
+    @media(max-width:768px){
+        .auth-page { grid-template-columns: 1fr; }
+        .auth-brand { display: none; }
+        .auth-form-panel { padding: 20px; }
+        .auth-card { padding: 28px 20px; }
+    }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="auth-page">
+    <!-- Left branding panel -->
+    <div class="auth-brand">
+        <div class="auth-brand-inner">
+            <div class="brand-icon-wrap">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div class="brand-name">Smart Campus</div>
+            <div class="brand-tag">Intelligence System</div>
+            <div class="brand-features">
+                {% block brand_features %}
+                <div class="brand-feature">
+                    <div class="brand-feature-icon"><i class="fas fa-chart-line"></i></div>
+                    <div class="brand-feature-text">
+                        <strong>Advanced Analytics</strong>
+                        <span>Data-driven insights for success</span>
+                    </div>
+                </div>
+                <div class="brand-feature">
+                    <div class="brand-feature-icon"><i class="fas fa-users"></i></div>
+                    <div class="brand-feature-text">
+                        <strong>Connected Community</strong>
+                        <span>Real-time collaboration tools</span>
+                    </div>
+                </div>
+                <div class="brand-feature">
+                    <div class="brand-feature-icon"><i class="fas fa-shield-alt"></i></div>
+                    <div class="brand-feature-text">
+                        <strong>Bank-Grade Security</strong>
+                        <span>ISO certified protection</span>
+                    </div>
+                </div>
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right form panel -->
+    <div class="auth-form-panel">
+        <div class="auth-card">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='shared.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}My Profile – Smart Campus Intelligence{% endblock %}
+{% block breadcrumb %}Student Portal{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block sidebar_nav %}
+<li class="nav-item" onclick="go('/student-dashboard')">
+    <i class="fas fa-home nav-icon"></i><span>Dashboard</span>
+</li>
+<li class="nav-item" onclick="go('/student-progress')">
+    <i class="fas fa-chart-line nav-icon"></i><span>Progress</span>
+</li>
+<li class="nav-item" onclick="go('/student-skills')">
+    <i class="fas fa-star nav-icon"></i><span>Skills</span>
+</li>
+<li class="nav-item active" onclick="go('/student-profile')">
+    <i class="fas fa-user-circle nav-icon"></i><span>Profile</span>
+</li>
+<li class="nav-item" onclick="go('/goals')">
+    <i class="fas fa-bullseye nav-icon"></i><span>Goals</span>
+</li>
+<li class="nav-item" onclick="go('/notifications')">
+    <i class="fas fa-bell nav-icon"></i><span>Notifications</span>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-premium">
+
+    <div class="grid-2col" style="margin-bottom:28px">
+        <!-- Profile Info -->
+        <div class="card card-premium">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-id-badge"></i> Student Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="profile-section">
+                    <div class="profile-row"><span class="profile-label">Name</span><span class="profile-value" id="profileName">–</span></div>
+                    <div class="profile-row"><span class="profile-label">Roll No.</span><span class="profile-value" id="profileRollNumber">–</span></div>
+                    <div class="profile-row"><span class="profile-label">Department</span><span class="profile-value" id="profileDepartment">–</span></div>
+                    <div class="profile-row"><span class="profile-label">Email</span><span class="profile-value" id="profileEmail">–</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Readiness summary -->
+        <div class="card card-premium">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-bullseye"></i> Academic Summary</h3>
+            </div>
+            <div class="card-body">
+                <div class="profile-section">
+                    <div class="profile-row"><span class="profile-label">Readiness</span><span class="profile-value" id="profileReadiness">–</span></div>
+                    <div class="profile-row"><span class="profile-label">Status</span><span class="profile-value" id="profileStatus">–</span></div>
+                    <div class="profile-row"><span class="profile-label">Risk Level</span><span class="profile-value" id="profileRisk">–</span></div>
+                    <div class="profile-row"><span class="profile-label">Placement</span><span class="profile-value" id="profilePlacement">–</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Placement reasons -->
+    <div class="card card-premium" style="margin-bottom:28px">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-trophy"></i> Placement Insights</h3>
+        </div>
+        <div class="card-body">
+            <ul class="insight-list" id="profilePlacementReasons">
+                <li class="insight-item text-muted fs-13">Loading insights…</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Active alerts -->
+    <div id="profileAlerts" style="margin-bottom:28px"></div>
+
+    <!-- Subject performance -->
+    <div class="card card-premium">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-book"></i> Subject Performance</h3>
+        </div>
+        <div class="card-body" style="padding:0">
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead><tr><th>Subject</th><th>Avg Marks</th><th>Status</th></tr></thead>
+                    <tbody id="profileSubjectPerformanceTable">
+                        <tr><td colspan="3" class="text-center text-muted">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='student.js') }}"></script>
+<script src="{{ url_for('static', filename='ai_assistant.js') }}"></script>
+<script>loadProfile();</script>
+{% endblock %}

@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% block title %}Skill Gap Analysis — Smart Campus Intelligence{% endblock %}
+{% block breadcrumb %}Placement Readiness{% endblock %}
+{% block page_title %}Skill Gap Analysis{% endblock %}
+
+{% block extra_css %}
+<style>
+.gap-hero { background: linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%); border-radius: 20px; padding: 28px 32px; color: #fff; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+.gap-hero h2 { font-size: 22px; font-weight: 800; margin: 0 0 6px; }
+.gap-hero p  { font-size: 14px; margin: 0; opacity: .85; }
+.score-ring { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.score-ring-val { font-size: 42px; font-weight: 900; line-height: 1; }
+.score-ring-lbl { font-size: 12px; opacity: .8; text-transform: uppercase; letter-spacing: .06em; }
+.filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+.filter-btn { padding: 7px 18px; border-radius: 99px; border: 2px solid var(--border-color,#e2e8f0); background: var(--card-bg,#fff); font-size: 13px; font-weight: 600; color: var(--text-muted,#64748b); cursor: pointer; transition: all .2s; }
+.filter-btn.active { border-color: #4f46e5; background: #4f46e5; color: #fff; }
+.company-cards { display: grid; gap: 16px; }
+.company-card { background: var(--card-bg,#fff); border-radius: 16px; border: 1.5px solid var(--border-color,#e2e8f0); overflow: hidden; transition: box-shadow .2s; }
+.company-card:hover { box-shadow: 0 6px 24px rgba(79,70,229,.15); }
+.company-card-header { padding: 18px 22px 14px; display: flex; justify-content: space-between; align-items: flex-start; cursor: pointer; }
+.company-card-header:hover { background: var(--bg-hover,rgba(79,70,229,.04)); }
+.company-name { font-size: 16px; font-weight: 700; color: var(--text-primary,#0f172a); }
+.company-meta { font-size: 12px; color: var(--text-muted,#64748b); margin-top: 3px; }
+.match-ring { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 56px; }
+.match-score { font-size: 22px; font-weight: 800; }
+.match-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.eligible-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 700; margin-left: 8px; }
+.eligible-yes  { background: #d1fae5; color: #065f46; }
+.eligible-near { background: #fef3c7; color: #92400e; }
+.eligible-no   { background: #fee2e2; color: #991b1b; }
+.company-card-body { padding: 0 22px 20px; border-top: 1px solid var(--border-color,#e2e8f0); }
+.gap-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 12px; margin: 16px 0; }
+.gap-item { background: var(--bg-secondary,#f8fafc); border-radius: 10px; padding: 12px 14px; }
+.gap-item-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; color: var(--text-muted,#64748b); margin-bottom: 6px; }
+.gap-item-bar { height: 6px; background: #e2e8f0; border-radius: 99px; overflow: hidden; margin: 6px 0; }
+.gap-item-fill { height: 100%; border-radius: 99px; transition: width .5s ease; }
+.gap-fill-green  { background: #10b981; }
+.gap-fill-yellow { background: #f59e0b; }
+.gap-fill-red    { background: #ef4444; }
+.gap-numbers { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted,#64748b); }
+.gap-current { font-weight: 700; color: var(--text-primary,#0f172a); }
+.action-plan { background: #ede9fe; border-radius: 10px; padding: 14px 16px; margin-top: 14px; }
+.action-plan-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #5b21b6; margin-bottom: 8px; }
+.action-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; font-size: 13px; color: #3b0764; }
+.action-item:last-child { margin-bottom: 0; }
+.action-icon { font-size: 11px; padding-top: 2px; flex-shrink: 0; color: #7c3aed; }
+.skills-needed { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.skill-tag-have    { background: #d1fae5; color: #065f46; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+.skill-tag-missing { background: #fee2e2; color: #991b1b; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+.skill-tag-neutral { background: #f1f5f9; color: #475569; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+.no-results { text-align: center; padding: 60px 20px; color: var(--text-muted,#94a3b8); }
+.empty-icon { font-size: 48px; margin-bottom: 16px; }
+.section-counter { font-size: 13px; font-weight: 600; color: var(--text-muted,#64748b); margin-bottom: 12px; }
+</style>
+{% endblock %}
+
+{% block sidebar_nav %}
+<li class="nav-item" onclick="go('/student-dashboard')"><i class="fas fa-home nav-icon"></i><span>Dashboard</span></li>
+<li class="nav-item active"><i class="fas fa-chart-bar nav-icon"></i><span>Skill Gap</span></li>
+<li class="nav-item" onclick="go('/student-skills')"><i class="fas fa-star nav-icon"></i><span>My Skills</span></li>
+<li class="nav-item" onclick="go('/student-progress')"><i class="fas fa-trophy nav-icon"></i><span>Progress</span></li>
+{% endblock %}
+
+{% block content %}
+<div id="gapApp">
+
+  <!-- Hero: student's current readiness -->
+  <div class="gap-hero">
+    <div>
+      <h2>Your Placement Gap Analysis</h2>
+      <p>See exactly what it takes to qualify for each company — and what to fix first.</p>
+    </div>
+    <div class="score-ring">
+      <div class="score-ring-val" id="heroScore">—</div>
+      <div class="score-ring-lbl">Overall Score</div>
+    </div>
+  </div>
+
+  <!-- Readiness breakdown -->
+  <div class="stats-grid" style="margin-bottom:24px" id="readinessBars">
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-calendar-check"></i></div><div class="stat-content"><p class="stat-label">Attendance</p><p class="stat-value" id="statAtt">—</p></div></div>
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-book-open"></i></div><div class="stat-content"><p class="stat-label">Marks</p><p class="stat-value" id="statMarks">—</p></div></div>
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-star"></i></div><div class="stat-content"><p class="stat-label">Skills</p><p class="stat-value" id="statSkills">—</p></div></div>
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-clipboard-list"></i></div><div class="stat-content"><p class="stat-label">Mock Tests</p><p class="stat-value" id="statMock">—</p></div></div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="filterCompanies('all', this)">All Companies</button>
+    <button class="filter-btn" onclick="filterCompanies('eligible', this)"><i class="fas fa-check-circle" style="color:#10b981"></i> Eligible Now</button>
+    <button class="filter-btn" onclick="filterCompanies('near', this)"><i class="fas fa-bullseye" style="color:#f59e0b"></i> Close (≥75%)</button>
+    <button class="filter-btn" onclick="filterCompanies('stretch', this)"><i class="fas fa-rocket" style="color:#ef4444"></i> Stretch</button>
+  </div>
+  <div class="section-counter" id="resultCounter"></div>
+
+  <!-- Company cards -->
+  <div class="company-cards" id="companyCards">
+    <div style="text-align:center;padding:60px 20px;color:#94a3b8">
+      <i class="fas fa-spinner fa-spin" style="font-size:28px;margin-bottom:14px;display:block"></i>
+      Loading your personalised gap analysis…
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='shared.js') }}"></script>
+<script>
+requireAuth(["Student"]);
+
+let _allCompanies = [];  // flat list of all companies with gap data
+let _activeFilter = "all";
+
+// ── Load data ─────────────────────────────────────────────────────────────────
+async function loadGapData() {
+  try {
+    const [dashRes, companyRes] = await Promise.all([
+      fetchAuth("/student/dashboard"),
+      fetchAuth("/company/matches"),
+    ]);
+
+    if (dashRes.success || dashRes.readiness) {
+      const r = dashRes.readiness || dashRes;
+      const score = r.final_score ?? r.score ?? 0;
+      setText("heroScore", Math.round(score) + "%");
+      document.querySelector(".gap-hero").style.background =
+        score >= 80 ? "linear-gradient(135deg,#059669,#047857)"
+        : score >= 60 ? "linear-gradient(135deg,#d97706,#b45309)"
+        : "linear-gradient(135deg,#4f46e5,#7c3aed)";
+      setText("statAtt",    Math.round(r.attendance ?? 0) + "%");
+      setText("statMarks",  Math.round(r.marks      ?? 0) + "%");
+      setText("statSkills", Math.round(r.skills_score ?? r.skills ?? 0) + "%");
+      setText("statMock",   Math.round(r.mock_score  ?? 0) + "%");
+    }
+
+    // Build flat list from matches response
+    const data = companyRes.data || companyRes;
+    const eligible  = (data.eligible_now   || []).map(c => ({ ...c, tier: "eligible" }));
+    const near      = (data.eligible_with_improvement || []).map(c => ({ ...c, tier: "near" }));
+    const stretch   = (data.stretch_targets || []).map(c => ({ ...c, tier: "stretch" }));
+
+    _allCompanies = [...eligible, ...near, ...stretch];
+    renderCards(_allCompanies);
+  } catch (e) {
+    document.getElementById("companyCards").innerHTML =
+      `<div class="no-results"><div class="empty-icon">⚠️</div><p>Could not load gap analysis. ${escapeHtml(e.message)}</p></div>`;
+  }
+}
+
+function filterCompanies(filter, btn) {
+  _activeFilter = filter;
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+
+  const filtered = filter === "all" ? _allCompanies
+    : _allCompanies.filter(c => c.tier === filter || (filter === "near" && c.tier === "near"));
+  renderCards(filtered);
+}
+
+function renderCards(companies) {
+  const el = document.getElementById("companyCards");
+  const counter = document.getElementById("resultCounter");
+
+  const counts = { eligible: _allCompanies.filter(c=>c.tier==="eligible").length, near: _allCompanies.filter(c=>c.tier==="near").length, stretch: _allCompanies.filter(c=>c.tier==="stretch").length };
+  counter.textContent = `${counts.eligible} eligible · ${counts.near} near · ${counts.stretch} stretch`;
+
+  if (!companies.length) {
+    el.innerHTML = `<div class="no-results"><div class="empty-icon"><i class="fas fa-search"></i></div><p>No companies match this filter.</p></div>`;
+    return;
+  }
+  el.innerHTML = companies.map(c => buildCompanyCard(c)).join("");
+}
+
+function buildCompanyCard(c) {
+  const score = c.match_score ?? 0;
+  const tier  = c.tier;
+  const scoreColor = tier === "eligible" ? "#10b981" : tier === "near" ? "#f59e0b" : "#ef4444";
+  const tierBadge  = tier === "eligible"
+    ? '<span class="eligible-badge eligible-yes"><i class="fas fa-check"></i> Eligible Now</span>'
+    : tier === "near"
+    ? '<span class="eligible-badge eligible-near"><i class="fas fa-bullseye"></i> Almost There</span>'
+    : '<span class="eligible-badge eligible-no"><i class="fas fa-rocket"></i> Stretch</span>';
+
+  const gaps   = c.gaps || c.gap_details || [];
+  const gapMsg = c.gap || "";
+
+  // Build per-criterion gap items
+  const gapItems = buildGapItems(c);
+  // Build action plan
+  const actions  = buildActions(c, gaps);
+  // Skills section
+  const skillsHtml = buildSkillsSection(c);
+
+  return `
+    <div class="company-card">
+      <div class="company-card-header" onclick="toggleCard(this)">
+        <div>
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
+            <span class="company-name">${escapeHtml(c.name)}</span>
+            ${tierBadge}
+          </div>
+          <div class="company-meta">
+            ${escapeHtml(c.sector || "Technology")} · ${escapeHtml(c.package || c.package_lpa || "N/A")} package
+            ${gapMsg ? ' · <span style="color:#f59e0b">' + escapeHtml(gapMsg.split(".")[0]) + '</span>' : ""}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="match-ring">
+            <div class="match-score" style="color:${scoreColor}">${Math.round(score)}%</div>
+            <div class="match-label" style="color:${scoreColor}">Match</div>
+          </div>
+          <i class="fas fa-chevron-down" style="color:#94a3b8;transition:transform .3s"></i>
+        </div>
+      </div>
+      <div class="company-card-body" style="display:none">
+        <div class="gap-grid">${gapItems}</div>
+        ${skillsHtml}
+        ${actions}
+      </div>
+    </div>`;
+}
+
+function buildGapItems(c) {
+  const criteria = [
+    { label: "Marks",       current: c.marks        || 0, required: c.min_marks_percentage || c.required_marks || 60 },
+    { label: "Attendance",  current: c.attendance   || 0, required: c.min_attendance || 75 },
+    { label: "Mock Tests",  current: c.mock_score   || 0, required: c.min_mock_score  || 60 },
+  ];
+  return criteria.map(cr => {
+    const pct      = Math.min(100, cr.current / Math.max(cr.required, 1) * 100);
+    const fillClass = pct >= 100 ? "gap-fill-green" : pct >= 75 ? "gap-fill-yellow" : "gap-fill-red";
+    const needMore  = cr.current < cr.required ? ` <span style="color:#ef4444;font-size:11px">(need +${(cr.required-cr.current).toFixed(1)})</span>` : `<span style="color:#10b981;font-size:11px"> ✓</span>`;
+    return `
+      <div class="gap-item">
+        <div class="gap-item-label">${cr.label}</div>
+        <div class="gap-item-bar"><div class="gap-item-fill ${fillClass}" style="width:${pct.toFixed(1)}%"></div></div>
+        <div class="gap-numbers">
+          <span class="gap-current">${parseFloat(cr.current).toFixed(1)}%${needMore}</span>
+          <span>Min: ${cr.required}%</span>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function buildSkillsSection(c) {
+  const req = c.required_skills || [];
+  if (!req.length) return "";
+  const have    = (c.matched_skills || []).map(s => s.toLowerCase());
+  return `
+    <div style="margin-top:12px">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted,#64748b);margin-bottom:8px">Required Skills</div>
+      <div class="skills-needed">
+        ${req.map(s => {
+          const cls = have.includes(s.toLowerCase()) ? "skill-tag-have" : "skill-tag-missing";
+          const icon = have.includes(s.toLowerCase()) ? "✓" : "✗";
+          return `<span class="${cls}">${icon} ${escapeHtml(s)}</span>`;
+        }).join("")}
+      </div>
+    </div>`;
+}
+
+function buildActions(c, gaps) {
+  const items = [];
+  if (c.marks && c.min_marks_percentage && c.marks < c.min_marks_percentage)
+    items.push(`Improve average marks by ${(c.min_marks_percentage - c.marks).toFixed(1)} points. Focus on your weakest subjects.`);
+  if (c.attendance && c.min_attendance && c.attendance < c.min_attendance)
+    items.push(`Raise attendance to at least ${c.min_attendance}%. Missing even 1 extra day matters.`);
+  if (c.mock_score && c.min_mock_score && c.mock_score < c.min_mock_score)
+    items.push(`Increase mock test score by ${(c.min_mock_score - c.mock_score).toFixed(1)} points. Practice aptitude daily.`);
+  const missingSkills = (c.required_skills || []).filter(s => !(c.matched_skills||[]).map(x=>x.toLowerCase()).includes(s.toLowerCase()));
+  if (missingSkills.length)
+    items.push(`Add these skills to your profile: ${missingSkills.join(", ")}.`);
+  if (!items.length) return `<div class="action-plan"><div class="action-plan-title">✓ You qualify!</div><div style="font-size:13px;color:#3b0764">All criteria met. Apply with confidence!</div></div>`;
+  return `
+    <div class="action-plan">
+      <div class="action-plan-title">📋 Action Plan to Qualify</div>
+      ${items.map(i => `<div class="action-item"><i class="fas fa-arrow-right action-icon"></i>${escapeHtml(i)}</div>`).join("")}
+    </div>`;
+}
+
+function toggleCard(header) {
+  const body  = header.nextElementSibling;
+  const icon  = header.querySelector(".fa-chevron-down");
+  const open  = body.style.display !== "none";
+  body.style.display = open ? "none" : "block";
+  if (icon) icon.style.transform = open ? "" : "rotate(180deg)";
+}
+
+loadGapData();
+</script>
+{% endblock %}

@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+{% block title %}Notifications - Smart Campus Intelligence{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='ai_assistant.css') }}">
+<style>
+    .notifications-container-sub {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .notifications-header-sub {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .preferences-panel {
+        margin-bottom: 32px;
+        background: var(--card-light);
+        padding: 24px;
+        border-radius: 16px;
+        border: 1px solid var(--border-light);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .preferences-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .preference-toggle {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 8px;
+        transition: background 0.2s;
+    }
+
+    .preference-toggle:hover {
+        background: var(--bg-lighter);
+    }
+
+    .notifications-list {
+        background: var(--card-light);
+        border-radius: 16px;
+        border: 1px solid var(--border-light);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+
+    .notification-item {
+        padding: 20px;
+        border-bottom: 1px solid var(--border-light);
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        transition: background 0.2s ease;
+    }
+
+    .notification-item:last-child {
+        border-bottom: none;
+    }
+
+    .notification-item:hover {
+        background: var(--bg-lighter);
+    }
+
+    .notification-item.unread {
+        background: rgba(var(--primary-rgb), 0.05);
+    }
+
+    .notification-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        flex-shrink: 0;
+        font-size: 1.25rem;
+    }
+
+    .notification-icon.academic {
+        background: #dbeafe;
+        color: #2563eb;
+    }
+
+    .notification-icon.alert {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .notification-icon.assignment {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+
+    .notification-icon.system {
+        background: #e0f2fe;
+        color: #0284c7;
+    }
+
+    .notification-body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .notification-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .notification-message {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin-bottom: 8px;
+    }
+
+    .notification-meta {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .notification-type {
+        padding: 2px 8px;
+        border-radius: 12px;
+        background: var(--bg-lighter);
+        font-weight: 500;
+        text-transform: capitalize;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        padding: 24px;
+    }
+
+    .pagination button {
+        padding: 8px 16px;
+        border: 1px solid var(--border-light);
+        background: var(--card-light);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .pagination button.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+</style>
+{% endblock %}
+{% block breadcrumb %}Inbox{% endblock %}
+{% block page_title %}Notifications Center{% endblock %}
+{% block sidebar_nav %}
+<li class="nav-item" onclick="go('/student-dashboard')">
+    <i class="fas fa-home nav-icon"></i>
+    <span>Dashboard</span>
+</li>
+<li class="nav-item" onclick="go('/student-progress')">
+    <i class="fas fa-chart-line nav-icon"></i>
+    <span>Progress</span>
+</li>
+<li class="nav-item" onclick="go('/student-skills')">
+    <i class="fas fa-star nav-icon"></i>
+    <span>Skills</span>
+</li>
+<li class="nav-item" onclick="go('/student-profile')">
+    <i class="fas fa-user-circle nav-icon"></i>
+    <span>Profile</span>
+</li>
+<li class="nav-item" onclick="go('/goals')">
+    <i class="fas fa-bullseye nav-icon"></i>
+    <span>Goals</span>
+</li>
+<li class="nav-item active" onclick="go('/notifications')">
+    <i class="fas fa-bell nav-icon"></i>
+    <span>Notifications</span>
+</li>
+{% endblock %}
+{% block content %}
+<div class="notifications-container-sub">
+    <!-- Preferences -->
+    <div class="preferences-panel">
+        <div class="notifications-header-sub">
+            <div>
+                <h2 style="margin: 0; font-size: 1.3em;">Notification Preferences</h2>
+                <p style="margin: 6px 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">Control how you receive
+                    updates.</p>
+            </div>
+            <button class="btn btn-primary" onclick="savePreferences()">
+                <i class="fas fa-save"></i> Save
+            </button>
+        </div>
+        <div class="preferences-grid">
+            <div class="form-row">
+                <label>Digest Frequency</label>
+                <select id="digestFrequency" class="form-select">
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="off">Off</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Reminder Hour (0-23)</label>
+                <input type="number" id="reminderHour" class="form-control" min="0" max="23" placeholder="18">
+            </div>
+            <div style="grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 20px;">
+                <label class="preference-toggle"><input type="checkbox" id="digestEnabled"> <span>Enable
+                        Digest</span></label>
+                <label class="preference-toggle"><input type="checkbox" id="academicEnabled">
+                    <span>Academic</span></label>
+                <label class="preference-toggle"><input type="checkbox" id="attendanceEnabled">
+                    <span>Attendance</span></label>
+                <label class="preference-toggle"><input type="checkbox" id="resultEnabled"> <span>Results</span></label>
+                <label class="preference-toggle"><input type="checkbox" id="systemEnabled"> <span>System</span></label>
+            </div>
+        </div>
+    </div>
+    <!-- Toolbar -->
+    <div class="notifications-header-sub">
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="markAllAsRead()">
+                <i class="fas fa-check-double"></i> Mark All Read
+            </button>
+        </div>
+        <div class="search-box" style="flex: 1; max-width: 300px;">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search..." onkeyup="applyFilters()">
+        </div>
+    </div>
+    <!-- List -->
+    <div id="notificationsList" class="notifications-list">
+        <div class="loading" style="text-align: center; padding: 40px;">
+            <i class="fas fa-circle-notch fa-spin fa-2x" style="color: var(--primary);"></i>
+        </div>
+    </div>
+    <!-- Pagination -->
+    <div id="pagination" class="pagination"></div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    let sourceNotifications = [];
+    let filteredNotifications = [];
+    let currentPage = 1;
+    const pageSize = 15;
+
+    async function loadNotifications() {
+        try {
+            const data = await fetchAuth('/api/notifications?limit=500');
+            sourceNotifications = data.notifications || [];
+            filteredNotifications = [...sourceNotifications];
+            renderNotifications();
+        } catch (error) {
+            console.error('Error loading notifications:', error);
+            showToast('Failed to load notifications', 'error');
+        }
+    }
+
+    function renderNotifications() {
+        const list = document.getElementById('notificationsList');
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        const pageItems = filteredNotifications.slice(start, end);
+
+        if (pageItems.length === 0) {
+            list.innerHTML = `
+                <div style="text-align: center; padding: 60px; color: var(--text-secondary);">
+                    <i class="fas fa-bell-slash fa-3x" style="margin-bottom: 15px; opacity: 0.3;"></i>
+                    <p>No notifications found.</p>
+                </div>
+            `;
+            renderPagination();
+            return;
+        }
+
+        list.innerHTML = pageItems.map(n => `
+            <div class="notification-item ${n.is_read ? '' : 'unread'}" onclick="markAsRead(${n.id}, this)">
+                <div class="notification-icon ${getIconClass(n.type)}">
+                    <i class="fas ${getIcon(n.type)}"></i>
+                </div>
+                <div class="notification-body">
+                    <div class="notification-title">${n.title}</div>
+                    <div class="notification-message">${n.message}</div>
+                    <div class="notification-meta">
+                        <span class="notification-type">${n.type}</span>
+                        <span><i class="far fa-clock"></i> ${moment(n.created_at).fromNow()}</span>
+                    </div>
+                </div>
+                ${!n.is_read ? '<div class="unread-dot" style="width: 8px; height: 8px; background: var(--primary); border-radius: 50%;"></div>' : ''}
+            </div>
+        `).join('');
+
+        renderPagination();
+    }
+
+    function getIconClass(type) {
+        if (type === 'academic') return 'academic';
+        if (type === 'alert') return 'alert';
+        if (type === 'assignment') return 'assignment';
+        return 'system';
+    }
+
+    function getIcon(type) {
+        if (type === 'academic') return 'fa-graduation-cap';
+        if (type === 'alert') return 'fa-exclamation-triangle';
+        if (type === 'assignment') return 'fa-tasks';
+        return 'fa-info-circle';
+    }
+
+    function renderPagination() {
+        const totalPages = Math.ceil(filteredNotifications.length / pageSize);
+        const container = document.getElementById('pagination');
+        
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+        for (let i = 1; i <= totalPages; i++) {
+            html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+        }
+        container.innerHTML = html;
+    }
+
+    function goToPage(page) {
+        currentPage = page;
+        renderNotifications();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function applyFilters() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        filteredNotifications = sourceNotifications.filter(n => 
+            n.title.toLowerCase().includes(query) || 
+            n.message.toLowerCase().includes(query) ||
+            n.type.toLowerCase().includes(query)
+        );
+        currentPage = 1;
+        renderNotifications();
+    }
+
+    async function markAsRead(id, element) {
+        if (!element.classList.contains('unread')) return;
+
+        try {
+            await fetchAuth(`/api/notifications/${id}/read`, { method: 'PUT' });
+            element.classList.remove('unread');
+            const dot = element.querySelector('.unread-dot');
+            if (dot) dot.remove();
+            
+            // Update local state
+            const notif = sourceNotifications.find(n => n.id === id);
+            if (notif) notif.is_read = true;
+        } catch (error) {
+            console.error('Error marking as read:', error);
+        }
+    }
+
+    async function markAllAsRead() {
+        try {
+            await fetchAuth('/api/notifications/mark-all-read', { method: 'PUT' });
+            sourceNotifications.forEach(n => n.is_read = true);
+            filteredNotifications.forEach(n => n.is_read = true);
+            renderNotifications();
+            showToast('All notifications marked as read', 'success');
+        } catch (error) {
+            console.error('Error marking all as read:', error);
+            showToast('Failed to mark all as read', 'error');
+        }
+    }
+
+    async function loadPreferences() {
+        try {
+            const data = await fetchAuth('/api/notifications/preferences');
+            const prefs = data.preferences || {};
+            
+            document.getElementById('digestEnabled').checked = prefs.digest_enabled;
+            document.getElementById('digestFrequency').value = prefs.digest_frequency || 'daily';
+            document.getElementById('reminderHour').value = prefs.reminder_hour || 18;
+            
+            document.getElementById('academicEnabled').checked = prefs.academic_enabled !== false;
+            document.getElementById('attendanceEnabled').checked = prefs.attendance_enabled !== false;
+            document.getElementById('resultEnabled').checked = prefs.result_enabled !== false;
+            document.getElementById('systemEnabled').checked = prefs.system_enabled !== false;
+        } catch (error) {
+            console.error('Error loading preferences:', error);
+        }
+    }
+
+    async function savePreferences() {
+        const prefs = {
+            digest_enabled: document.getElementById('digestEnabled').checked,
+            digest_frequency: document.getElementById('digestFrequency').value,
+            reminder_hour: parseInt(document.getElementById('reminderHour').value),
+            academic_enabled: document.getElementById('academicEnabled').checked,
+            attendance_enabled: document.getElementById('attendanceEnabled').checked,
+            result_enabled: document.getElementById('resultEnabled').checked,
+            system_enabled: document.getElementById('systemEnabled').checked
+        };
+
+        try {
+            await fetchAuth('/api/notifications/preferences', {
+                method: 'PUT',
+                body: JSON.stringify(prefs)
+            });
+            showToast('Preferences saved successfully', 'success');
+        } catch (error) {
+            console.error('Error saving preferences:', error);
+            showToast('Failed to save preferences', 'error');
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        loadNotifications();
+        loadPreferences();
+    });
+</script>
+<script src="{{ url_for('static', filename='ai_assistant.js') }}"></script>
+{% endblock %}

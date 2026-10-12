@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% block title %}Student Dashboard – Smart Campus Intelligence{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='ai-assistant-modern.css') }}">
+{% endblock %}
+
+{% block breadcrumb %}Dashboard{% endblock %}
+{% block page_title %}Welcome back, Student{% endblock %}
+
+{% block sidebar_nav %}
+<li class="nav-item active" onclick="go('/student-dashboard')">
+    <i class="fas fa-home nav-icon"></i><span>Dashboard</span><span class="nav-badge"></span>
+</li>
+<li class="nav-item" onclick="go('/student-progress')">
+    <i class="fas fa-chart-line nav-icon"></i><span>Progress</span>
+</li>
+<li class="nav-item" onclick="go('/student-skills')">
+    <i class="fas fa-star nav-icon"></i><span>Skills</span>
+</li>
+<li class="nav-item" onclick="go('/skill-gap')">
+    <i class="fas fa-chart-bar nav-icon"></i><span>Skill Gap</span>
+</li>
+<li class="nav-item" onclick="go('/leaderboard')">
+    <i class="fas fa-trophy nav-icon"></i><span>Leaderboard</span>
+</li>
+<li class="nav-item" onclick="go('/student-profile')">
+    <i class="fas fa-user-circle nav-icon"></i><span>Profile</span>
+</li>
+<li class="nav-item" onclick="go('/goals')">
+    <i class="fas fa-bullseye nav-icon"></i><span>Goals</span>
+</li>
+<li class="nav-item" onclick="go('/notifications')">
+    <i class="fas fa-bell nav-icon"></i><span>Notifications</span>
+</li>
+<li class="nav-item" onclick="document.getElementById('studentMediaSection')?.scrollIntoView({behavior:'smooth', block:'start'})">
+    <i class="fas fa-folder nav-icon"></i><span>Files</span>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-premium">
+
+    <!-- KPI Row -->
+    <div class="stats-grid" style="margin-bottom:28px">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon"><i class="fas fa-bullseye"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">Readiness Score</p>
+                <p class="stat-value" id="readinessScore">–</p>
+                <div class="stat-bar"><div class="stat-bar-fill" id="progressFill" style="width:0%"></div></div>
+            </div>
+        </div>
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">Placement Status</p>
+                <p class="stat-value" id="placement">–</p>
+            </div>
+        </div>
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon"><i class="fas fa-shield-alt"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">Risk Level</p>
+                <p class="stat-value" id="risk">–</p>
+            </div>
+        </div>
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon"><i class="fas fa-signal"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">Overall Status</p>
+                <p class="stat-value" id="status">–</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance + Indicators -->
+    <div class="grid-2col" style="margin-bottom:28px">
+        <div class="card card-premium">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-chart-bar"></i> Performance Breakdown</h3>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="card card-premium">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-list-check"></i> Key Indicators</h3>
+            </div>
+            <div class="card-body">
+                <div class="metric-grid">
+                    <div class="metric-item">
+                        <div class="metric-icon attendance"><i class="fas fa-calendar-check"></i></div>
+                        <div class="metric-text">
+                            <p class="metric-label">Attendance</p>
+                            <p class="metric-large" id="attendance">–</p>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-icon marks"><i class="fas fa-pencil-alt"></i></div>
+                        <div class="metric-text">
+                            <p class="metric-label">Avg Marks</p>
+                            <p class="metric-large" id="marks">–</p>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-icon" style="background:rgba(245,158,11,.1);color:#f59e0b">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="metric-text">
+                            <p class="metric-label">Mock Score</p>
+                            <p class="metric-large" id="mockScore">–</p>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-icon" style="background:rgba(16,185,129,.1);color:#10b981">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div class="metric-text">
+                            <p class="metric-label">Skills</p>
+                            <p class="metric-large" id="skillsCount">–</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notice Board + Study Materials -->
+    <div class="grid-2col" style="margin-bottom:28px">
+        <div class="card card-premium">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-bullhorn"></i> Notice Board</h3>
+            </div>
+            <div class="card-body" style="padding:0">
+                <ul class="insight-list custom-scrollbar" id="studentNoticesList" style="max-height:240px;padding:16px">
+                    <li class="insight-item"><i class="fas fa-spinner fa-spin"></i> Loading notices…</li>
+                </ul>
+            </div>
+        </div>
+        <div class="card card-premium">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-folder-open"></i> Study Materials</h3>
+            </div>
+            <div class="card-body" style="padding:0">
+                <div class="table-wrapper custom-scrollbar" style="max-height:240px">
+                    <table class="data-table">
+                        <thead><tr><th>Material</th><th>Subject</th></tr></thead>
+                        <tbody id="studentResourcesTable">
+                            <tr><td colspan="2" class="text-center">Loading…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% set media_section_id = 'studentMediaSection' %}
+    {% set media_title = 'My Files' %}
+    {% set media_subtitle = 'Upload resumes, notes, certificates, and other campus files' %}
+    {% include 'partials/media_panel.html' %}
+
+    <!-- Profile + Insights -->
+    <div class="card card-premium">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-user-circle"></i> Profile &amp; Placement Insights</h3>
+        </div>
+        <div class="card-body">
+            <div class="grid-2col">
+                <div class="profile-section">
+                    <div class="profile-row"><span class="profile-label">Name</span><span class="profile-value" id="profileName">–</span></div>
+                    <div class="profile-row"><span class="profile-label">Roll No.</span><span class="profile-value" id="profileRollNumber">–</span></div>
+                    <div class="profile-row"><span class="profile-label">Department</span><span class="profile-value" id="profileDepartment">–</span></div>
+                    <div class="profile-row"><span class="profile-label">Email</span><span class="profile-value" id="profileEmail">–</span></div>
+                </div>
+                <ul class="insight-list" id="placementReasons">
+                    <li class="insight-item text-muted fs-13">Loading placement insights…</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='student.js') }}"></script>
+<script src="{{ url_for('static', filename='ai_assistant.js') }}"></script>
+<script>
+(function () {
+    "use strict";
+
+    // ── Load dashboard KPIs ──────────────────────────────────────────────
+    loadDashboard();
+
+    // ── Notice Board ────────────────────────────────────────────────────
+    async function loadStudentNotices() {
+        const list = document.getElementById('studentNoticesList');
+        try {
+            const res = await fetchAuth('/api/notices');
+            const notices = res.data || [];
+            if (!notices.length) {
+                list.innerHTML = '<li class="insight-item text-muted">No new notices.</li>';
+                return;
+            }
+            list.innerHTML = notices.map(n => `
+                <li class="insight-item">
+                    <strong class="fw-600">${escapeHtml(n.title)}</strong>
+                    <p class="fs-13" style="margin:4px 0;color:var(--text-secondary)">${escapeHtml(n.content)}</p>
+                    <small class="text-muted fs-12">${formatDate(n.created_at)} · ${escapeHtml(n.author_name || '')}</small>
+                </li>`).join('');
+        } catch (e) {
+            list.innerHTML = '<li class="insight-item text-muted">Unable to load notices.</li>';
+        }
+    }
+
+    // ── Study Materials ─────────────────────────────────────────────────
+    async function loadStudentResources() {
+        const tbody = document.getElementById('studentResourcesTable');
+        try {
+            const res = await fetchAuth('/api/resources');
+            const resources = res.data || [];
+            if (!resources.length) {
+                tbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">No resources yet.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = resources.map(r => `
+                <tr>
+                    <td>
+                        <a href="${escapeHtml(r.resource_link)}" target="_blank" rel="noopener"
+                           style="color:var(--primary);font-weight:600">${escapeHtml(r.title)}</a>
+                        ${r.description ? `<div class="fs-12 text-muted">${escapeHtml(r.description)}</div>` : ''}
+                    </td>
+                    <td>${escapeHtml(r.subject_name || 'General')}</td>
+                </tr>`).join('');
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">Unable to load materials.</td></tr>';
+        }
+    }
+
+    // init
+    loadStudentNotices();
+    loadStudentResources();
+}());
+</script>
+{% endblock %}

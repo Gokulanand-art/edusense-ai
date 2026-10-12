@@ -1,0 +1,58 @@
+### Add Student
+POST http://127.0.0.1:5000/add-student
+Content-Type: application/json
+
+{
+    "name": "Amol",
+    "email": "Amol@example.com",
+    "department": "Computer Science"
+}
+
+##register auth user
+POST http://127.0.0.1:5000/auth/register
+Content-Type: application/json
+
+{
+    "name": "Mahesh",
+    "email": "mahesh@test.com",
+    "password": "123456",
+    "role_id": 1
+}
+
+#auth login
+POST http://127.0.0.1:5000/auth/login
+Content-Type: application/json
+
+{
+    "email": "mahesh@test.com",
+    "password": "123456"
+}
+
+### Get Students
+GET http://127.0.0.1:5000/students
+Content-Type: application/json
+Authorization: Bearer <token>
+
+### Update Student
+PUT http://127.0.0.1:5000/update-student/1
+Content-Type: application/json
+
+{
+    "name": "Mahesh Updated",
+    "email": "mahesh_new@example.com",
+    "department": "Artificial Intelligence"
+}
+
+### Delete Student
+DELETE http://127.0.0.1:5000/delete-student/3
+Content-Type: application/json
+
+
+POST http://127.0.0.1:5000/subjects
+Content-Type: application/json
+Authorization: Bearer <token>
+{
+    "name": "Data Structures",
+    "code": "DS101",
+    "department": "CSE"
+}

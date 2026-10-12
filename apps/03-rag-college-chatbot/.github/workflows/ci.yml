@@ -1,0 +1,41 @@
+name: CI Build & Verification
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  DATABASE_URL: "mongodb+srv://venkatvantakula45_db_user:QtTjfBpdEvQZSPHM@chatbot.uht7czj.mongodb.net/college_rag?retryWrites=true&w=majority&appName=Chatbot"
+  NEXTAUTH_SECRET: "super-secret-production-nextauth-key-32-chars-min-12345"
+  NEXTAUTH_URL: "http://localhost:3000"
+  AUTH_SECRET: "super-secret-production-nextauth-key-32-chars-min-12345"
+  LLM_PROVIDER: "local"
+  EMBEDDING_PROVIDER: "local"
+
+jobs:
+  build:
+    name: Build & Test Next.js App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate Prisma Client
+        run: node scripts/prisma-generate.mjs
+
+      - name: Run Tests
+        run: npm test
+
+      - name: Build Next.js Application
+        run: npm run build

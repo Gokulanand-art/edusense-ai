@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}My Skills – Smart Campus Intelligence{% endblock %}
+{% block breadcrumb %}Student Portal{% endblock %}
+{% block page_title %}Skills &amp; Competencies{% endblock %}
+
+{% block sidebar_nav %}
+<li class="nav-item" onclick="go('/student-dashboard')">
+    <i class="fas fa-home nav-icon"></i><span>Dashboard</span>
+</li>
+<li class="nav-item" onclick="go('/student-progress')">
+    <i class="fas fa-chart-line nav-icon"></i><span>Progress</span>
+</li>
+<li class="nav-item active" onclick="go('/student-skills')">
+    <i class="fas fa-star nav-icon"></i><span>Skills</span>
+</li>
+<li class="nav-item" onclick="go('/student-profile')">
+    <i class="fas fa-user-circle nav-icon"></i><span>Profile</span>
+</li>
+<li class="nav-item" onclick="go('/goals')">
+    <i class="fas fa-bullseye nav-icon"></i><span>Goals</span>
+</li>
+<li class="nav-item" onclick="go('/notifications')">
+    <i class="fas fa-bell nav-icon"></i><span>Notifications</span>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-premium">
+
+    <div class="stats-grid" style="margin-bottom:28px">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon"><i class="fas fa-tools"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">Total Skills</p>
+                <p class="stat-value" id="skillsCount">–</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Skill -->
+    <div class="card card-premium" style="margin-bottom:28px">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-plus-circle"></i> Add New Skill</h3>
+        </div>
+        <div class="card-body">
+            <p class="fs-13 text-muted" id="skillsSummaryMessage" style="margin-bottom:16px">Loading your skills…</p>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <input class="form-control" id="skillInput" placeholder="e.g. Python, Machine Learning, SQL…"
+                       style="flex:1;min-width:200px" maxlength="100">
+                <select class="form-control" id="skillLevel" style="width:160px">
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate" selected>Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                </select>
+                <button class="btn btn-primary" id="addSkillBtn" onclick="addSkill()">
+                    <i class="fas fa-plus"></i> Add Skill
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skills List -->
+    <div class="card card-premium">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-star"></i> Your Skills</h3>
+        </div>
+        <div class="card-body">
+            <div id="skillsEmptyState" style="display:none" class="empty-state">
+                <i class="fas fa-tools"></i>
+                <p>No skills added yet. Start building your profile above!</p>
+            </div>
+            <ul id="skillsList" class="skills-chips-list" style="list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:10px"></ul>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='student.js') }}"></script>
+<script src="{{ url_for('static', filename='ai_assistant.js') }}"></script>
+<script>loadSkills();</script>
+{% endblock %}

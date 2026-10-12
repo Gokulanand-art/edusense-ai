@@ -1,0 +1,99 @@
+# render.yaml — One-click Render Blueprint for Smart Campus Intelligence System
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Deploys:
+#   - Web service running Flask via Gunicorn
+#   - Managed PostgreSQL database
+#
+# After deploy, seed demo data with:
+#   python scripts/seed_data.py
+
+services:
+  - type: web
+    name: smart-campus-intelligence
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: >
+      gunicorn wsgi:application
+      --workers ${WEB_CONCURRENCY:-2}
+      --threads ${GUNICORN_THREADS:-2}
+      --timeout 120
+      --bind 0.0.0.0:$PORT
+      --max-requests 1000
+      --max-requests-jitter 100
+      --log-level info
+      --access-logfile -
+    healthCheckPath: /health/ready
+    autoDeploy: true
+
+    envVars:
+      # ── Database ─────────────────────────────────────────────────────────────
+      - key: DATABASE_URL
+        fromDatabase:
+          name: smart-campus-db
+          property: connectionString
+
+      - key: DB_SSL_MODE
+        value: require
+
+      # Connection pool tuned for Render free tier (max 25 Postgres connections)
+      - key: DB_POOL_MINCONN
+        value: "1"
+      - key: DB_POOL_MAXCONN
+        value: "5"
+
+      # ── Flask ────────────────────────────────────────────────────────────────
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: "false"
+      - key: APP_NAME
+        value: "Smart Campus Intelligence System"
+      - key: STRICT_STARTUP_VALIDATION
+        value: "true"
+      - key: LOG_LEVEL
+        value: INFO
+
+      # ── Security ─────────────────────────────────────────────────────────────
+      # Auto-generated on first deploy — keep stable after that
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SECRET_KEY
+        generateValue: true
+
+      - key: AUTH_COOKIE_SECURE
+        value: "true"
+      - key: AUTH_COOKIE_SAMESITE
+        value: Lax
+      - key: TRUST_PROXY_COUNT
+        value: "1"
+
+      # ── Workers ──────────────────────────────────────────────────────────────
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: GUNICORN_THREADS
+        value: "2"
+
+      # ── Release metadata ─────────────────────────────────────────────────────
+      - key: RELEASE_VERSION
+        value: "render-production"
+
+      # ── Optional features (set in Render dashboard, not here) ────────────────
+      # AI assistant — get key free at https://aistudio.google.com/app/apikey
+      - key: GEMINI_API_KEY
+        sync: false
+
+      # OTP email — use Gmail App Password (not regular password)
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+
+databases:
+  - name: smart-campus-db
+    databaseName: smart_campus_db
+    user: smart_campus_user
+    plan: free
+    region: oregon

@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}My Progress – Smart Campus Intelligence{% endblock %}
+{% block breadcrumb %}Student Portal{% endblock %}
+{% block page_title %}My Progress{% endblock %}
+
+{% block sidebar_nav %}
+<li class="nav-item" onclick="go('/student-dashboard')">
+    <i class="fas fa-home nav-icon"></i><span>Dashboard</span>
+</li>
+<li class="nav-item active" onclick="go('/student-progress')">
+    <i class="fas fa-chart-line nav-icon"></i><span>Progress</span>
+</li>
+<li class="nav-item" onclick="go('/student-skills')">
+    <i class="fas fa-star nav-icon"></i><span>Skills</span>
+</li>
+<li class="nav-item" onclick="go('/student-profile')">
+    <i class="fas fa-user-circle nav-icon"></i><span>Profile</span>
+</li>
+<li class="nav-item" onclick="go('/goals')">
+    <i class="fas fa-bullseye nav-icon"></i><span>Goals</span>
+</li>
+<li class="nav-item" onclick="go('/notifications')">
+    <i class="fas fa-bell nav-icon"></i><span>Notifications</span>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-premium">
+
+    <div class="stats-grid" style="margin-bottom:28px">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">Attendance</p>
+                <p class="stat-value" id="attendance">–</p>
+            </div>
+        </div>
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon"><i class="fas fa-pencil-alt"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">Avg Marks</p>
+                <p class="stat-value" id="marks">–</p>
+            </div>
+        </div>
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">Mock Score</p>
+                <p class="stat-value" id="mock">–</p>
+            </div>
+        </div>
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon"><i class="fas fa-tools"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">Skills Score</p>
+                <p class="stat-value" id="skills">–</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-2col" style="margin-bottom:28px">
+        <div class="card card-premium">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-radar-chart"></i> Performance Radar</h3>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="card card-premium">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-chart-line"></i> Marks Timeline</h3>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="growthTimelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-premium" style="margin-bottom:28px">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-book"></i> Subject-wise Performance</h3>
+        </div>
+        <div class="card-body" style="padding:0">
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead><tr><th>Subject</th><th>Avg Marks</th><th>Status</th></tr></thead>
+                    <tbody id="subjectPerformanceTable">
+                        <tr><td colspan="3" class="text-center text-muted">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-2col">
+        <div class="card card-premium">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-chart-bar"></i> Subject Comparison</h3>
+            </div>
+            <div class="card-body">
+                <div class="chart-container"><canvas id="subjectChart"></canvas></div>
+            </div>
+        </div>
+        <div class="card card-premium">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-arrow-trend-up"></i> Subject Trends</h3>
+            </div>
+            <div class="card-body">
+                <div id="subjectTrendsContainer">
+                    <p class="text-muted fs-13">Loading trends…</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='student.js') }}"></script>
+<script src="{{ url_for('static', filename='ai_assistant.js') }}"></script>
+<script>loadProgress();</script>
+{% endblock %}

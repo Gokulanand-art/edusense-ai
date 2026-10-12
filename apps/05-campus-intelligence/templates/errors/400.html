@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>400 – Bad Request | Smart Campus</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Inter',sans-serif;background:#0f172a;color:#f8fafc;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
+        .error-container{max-width:480px}
+        .error-code{font-size:120px;font-weight:700;line-height:1;background:linear-gradient(135deg,#0ea5e9,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .error-title{font-size:28px;font-weight:600;margin:16px 0 8px}
+        .error-desc{color:#94a3b8;font-size:16px;line-height:1.6;margin-bottom:36px}
+        .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:10px;font-weight:600;font-size:15px;text-decoration:none;transition:all .2s;cursor:pointer;border:none}
+        .btn-primary{background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(79,70,229,.4)}
+        .icon-wrap{width:72px;height:72px;border-radius:50%;background:rgba(14,165,233,.15);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:28px;color:#0ea5e9}
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="icon-wrap"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="error-code">400</div>
+        <h1 class="error-title">Bad Request</h1>
+        <p class="error-desc">The request could not be understood. Please check your input and try again.</p>
+        <a href="/" class="btn btn-primary"><i class="fas fa-home"></i> Back to Home</a>
+    </div>
+</body>
+</html>

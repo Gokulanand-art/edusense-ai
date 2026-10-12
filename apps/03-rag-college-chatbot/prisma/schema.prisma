@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  email        String         @unique
+  passwordHash String
+  role         String         @default("STUDENT")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  conversations Conversation[]
+  feedbacks    Feedback[]
+
+  @@map("users")
+}
+
+model Conversation {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  title     String    @default("New Conversation")
+  userId    String    @db.ObjectId
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  messages  Message[]
+
+  @@index([userId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String          @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId String          @db.ObjectId
+  conversation   Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String
+  content        String
+  createdAt      DateTime        @default(now())
+
+  sources        MessageSource[]
+  feedback       Feedback?
+
+  @@index([conversationId])
+  @@map("messages")
+}
+
+model MessageSource {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  messageId       String        @db.ObjectId
+  message         Message       @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  documentChunkId String        @db.ObjectId
+  documentChunk   DocumentChunk @relation(fields: [documentChunkId], references: [id], onDelete: Cascade)
+  relevanceScore  Float
+  snippet         String
+  createdAt       DateTime      @default(now())
+
+  @@index([messageId])
+  @@index([documentChunkId])
+  @@map("message_sources")
+}
+
+model Feedback {
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  messageId String         @unique @db.ObjectId
+  message   Message        @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String         @db.ObjectId
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    String
+  comment   String?
+  createdAt DateTime       @default(now())
+
+  @@index([userId])
+  @@map("feedbacks")
+}
+
+model Document {
+  id           String          @id @default(auto()) @map("_id") @db.ObjectId
+  title        String
+  fileName     String
+  fileType     String
+  fileSize     Int
+  filePath     String?
+  category     String          @default("General")
+  status       String          @default("PENDING")
+  errorMessage String?
+  metadata     String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  chunks       DocumentChunk[]
+
+  @@index([category])
+  @@index([status])
+  @@map("documents")
+}
+
+model DocumentChunk {
+  id           String                 @id @default(auto()) @map("_id") @db.ObjectId
+  documentId   String                 @db.ObjectId
+  document     Document               @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  content      String
+  chunkIndex   Int
+  pageNumber   Int?
+  sectionTitle String?
+  tokenCount   Int                    @default(0)
+  
+  vectorJson   String?
+  createdAt    DateTime               @default(now())
+
+  messageSources MessageSource[]
+
+  @@index([documentId])
+  @@index([chunkIndex])
+  @@map("document_chunks")
+}

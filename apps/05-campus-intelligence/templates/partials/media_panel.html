@@ -1,0 +1,40 @@
+<section id="{{ media_section_id|default('mediaSection') }}" class="card card-premium media-panel" data-media-panel style="margin-bottom: 32px;">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-folder"></i> {{ media_title|default('Files') }}</h3>
+        <p class="card-subtitle">{{ media_subtitle|default('Upload and download your saved campus files') }}</p>
+    </div>
+    <div class="card-body">
+        <form class="media-upload-form" data-media-upload-form>
+            <div class="grid-2col" style="align-items: end;">
+                <div class="form-group">
+                    <label class="form-label">File</label>
+                    <input class="form-control" type="file" name="file" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <input class="form-control" type="text" name="description" maxlength="500" placeholder="Optional note">
+                </div>
+            </div>
+            <button class="btn btn-primary" type="submit">
+                <i class="fas fa-upload"></i>
+                <span>Upload</span>
+            </button>
+        </form>
+
+        <div class="table-wrapper" style="margin-top: 20px;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>File</th>
+                        <th>Size</th>
+                        <th>Uploaded</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody data-media-files>
+                    <tr><td colspan="4" class="text-center">Loading files...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

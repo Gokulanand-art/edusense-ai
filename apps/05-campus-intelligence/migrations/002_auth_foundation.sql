@@ -1,0 +1,52 @@
+CREATE TABLE IF NOT EXISTS roles (
+    id SERIAL PRIMARY KEY,
+    role_name VARCHAR(50) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE roles
+    ADD COLUMN IF NOT EXISTS role_name VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS name VARCHAR(100),
+    ADD COLUMN IF NOT EXISTS email VARCHAR(100),
+    ADD COLUMN IF NOT EXISTS password VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS role_id INTEGER,
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_id_fkey;
+
+DO $$
+BEGIN
+    ALTER TABLE users
+    ADD CONSTRAINT users_role_id_fkey
+    FOREIGN KEY (role_id) REFERENCES roles(id)
+    ON DELETE RESTRICT;
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END
+$$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS roles_role_name_lower_unique_idx
+    ON roles (LOWER(role_name));
+
+CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_unique_idx
+    ON users (LOWER(email));
+
+INSERT INTO roles (id, role_name)
+VALUES
+    (1, 'Admin'),
+    (2, 'Faculty'),
+    (3, 'Student')
+ON CONFLICT (id) DO UPDATE
+SET role_name = EXCLUDED.role_name;

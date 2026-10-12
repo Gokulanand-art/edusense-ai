@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Dashboard - Smart Campus Intelligence{% include "partials/bulk_marks.html" %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='ai-assistant-modern.css') }}">
+<style>
+    /* Section targeting fix for sidebar clicks */
+    .dashboard-premium section { scroll-margin-top: 100px; }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}Faculty Portal{% endblock %}
+{% block page_title %}Faculty Command Center{% endblock %}
+
+{% block sidebar_nav %}
+<li class="nav-item active" onclick="go('/faculty-dashboard')">
+    <i class="fas fa-home nav-icon"></i>
+    <span>Dashboard</span>
+<li class="nav-item" onclick="go('/leaderboard')">
+    <i class="fas fa-trophy nav-icon"></i>
+    <span>Leaderboard</span>
+</li>
+<li class="nav-item" onclick="go('/faculty/bulk-marks')">
+    <i class="fas fa-table nav-icon"></i>
+    <span>Bulk Marks</span>
+</li>
+</li>
+<li class="nav-item" onclick="focusFacultySection('classroomSection', event)">
+    <i class="fas fa-people-group nav-icon"></i>
+    <span>Classroom</span>
+</li>
+<li class="nav-item" onclick="focusFacultySection('interventionSection', event)">
+    <i class="fas fa-hand-holding-heart nav-icon"></i>
+    <span>Interventions</span>
+</li>
+<li class="nav-item" onclick="focusFacultySection('noticesSection', event)">
+    <i class="fas fa-bullhorn nav-icon"></i>
+    <span>Notice Board</span>
+</li>
+<li class="nav-item" onclick="focusFacultySection('resourcesSection', event)">
+    <i class="fas fa-folder-open nav-icon"></i>
+    <span>Study Resources</span>
+</li>
+<li class="nav-item" onclick="focusFacultySection('facultyMediaSection', event)">
+    <i class="fas fa-folder nav-icon"></i>
+    <span>Files</span>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-premium">
+    <!-- Section Header -->
+    <div class="section-header">
+        <div>
+            <h2 class="section-title">Faculty Overview</h2>
+            <p class="section-subtitle">Manage academic performance and student interventions.</p>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="loadFacultyDashboard()">
+            <i class="fas fa-sync"></i>
+            <span>Refresh Data</span>
+        </button>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="stats-grid" style="margin-bottom: 32px;">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">My Students</p>
+                <p class="stat-value" id="facultyStudentCount">0</p>
+            </div>
+        </div>
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">Avg. Marks</p>
+                <p class="stat-value" id="facultyAverageMarks">0</p>
+            </div>
+        </div>
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">At Risk</p>
+                <p class="stat-value" id="facultyAtRiskCount">0</p>
+            </div>
+        </div>
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon"><i class="fas fa-book"></i></div>
+            <div class="stat-content">
+                <p class="stat-label">Subjects</p>
+                <p class="stat-value" id="facultySubjectCount">0</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Classroom Workflow -->
+    <section id="classroomSection" class="card card-premium" style="margin-bottom: 32px;">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-people-group"></i> Classroom Workflow</h3>
+        </div>
+        <div class="card-body">
+            <div class="grid-2col" style="margin-bottom: 20px;">
+                <div class="form-group">
+                    <label class="form-label">Subject</label>
+                    <select class="form-control" id="facultyClassSubjectFilter"></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Department</label>
+                    <select class="form-control" id="facultyClassDepartmentFilter">
+                        <option value="All">All Departments</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Roll No.</th>
+                            <th>Attendance %</th>
+                            <th>Marks</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="facultyClassRosterTable">
+                        <tr><td colspan="5" class="text-center">Select subject to load roster</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Intervention Watchlist -->
+    <section id="interventionSection" class="card card-premium" style="margin-bottom: 32px;">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-hand-holding-heart"></i> Intervention Watchlist</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Focus Area</th>
+                            <th>Open Cases</th>
+                            <th>Due Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="facultyInterventionWatchlistTable">
+                        <tr><td colspan="5" class="text-center">Loading watchlist...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Notice Board -->
+    <section id="noticesSection" class="card card-premium" style="margin-bottom: 32px;">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-bullhorn"></i> Campus Notices</h3>
+        </div>
+        <div class="card-body">
+            <div class="grid-2col">
+                <div>
+                    <h4 class="mb-3">Post a Notice</h4>
+                    <form onsubmit="submitFacultyNotice(event)">
+                        <div class="form-group">
+                            <input class="form-control" id="facultyNoticeTitle" placeholder="Title" required>
+                        </div>
+                        <div class="form-group">
+                            <textarea class="form-control" id="facultyNoticeContent" rows="3" placeholder="Content..." required></textarea>
+                        </div>
+                        <button class="btn btn-primary btn-block">Post Notice</button>
+                    </form>
+                </div>
+                <div class="custom-scrollbar" style="max-height: 300px; overflow-y: auto;">
+                    <ul class="insight-list" id="facultyNoticesList"></ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Resources Section -->
+    <section id="resourcesSection" class="card card-premium" style="margin-bottom: 32px;">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-folder-open"></i> Study Resources</h3>
+        </div>
+        <div class="card-body">
+            <div class="grid-2col">
+                <form onsubmit="submitFacultyResource(event)">
+                    <div class="form-group">
+                        <label class="form-label">Title</label>
+                        <input class="form-control" id="facultyResourceTitle" placeholder="Resource Title" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Subject</label>
+                        <select class="form-control" id="facultyResourceSubject">
+                            <option value="">General Resource</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Link</label>
+                        <input class="form-control" id="facultyResourceLink" type="url" placeholder="https://..." required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="facultyResourceDesc" rows="2" placeholder="Brief description..."></textarea>
+                    </div>
+                    <button class="btn btn-primary btn-block" type="submit">Share Resource</button>
+                </form>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Subject</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="facultyResourcesTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {% set media_section_id = 'facultyMediaSection' %}
+    {% set media_title = 'Faculty Files' %}
+    {% set media_subtitle = 'Upload class material, reports, and faculty documents' %}
+    {% include 'partials/media_panel.html' %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='faculty.js') }}"></script>
+<script src="{{ url_for('static', filename='ai_assistant.js') }}"></script>
+<script>
+    loadFacultyDashboard();
+    
+    // Smooth scroll and focus for faculty sections
+    function focusFacultySection(id, event) {
+        const elem = document.getElementById(id);
+        if (elem) {
+            elem.scrollIntoView({ behavior: 'smooth' });
+            elem.classList.add('premium-glow-pulse');
+            setTimeout(() => elem.classList.remove('premium-glow-pulse'), 2000);
+        }
+        if (event && event.currentTarget) {
+            document.querySelectorAll('.sidebar-nav .nav-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+    }
+
+    async function loadFacultyNotices() {
+        const list = document.getElementById('facultyNoticesList');
+        try {
+            const res = await fetchAuth('/api/notices');
+            if (res.data) {
+                if (res.data.length === 0) {
+                    list.innerHTML = '<li class="insight-item">No notices found.</li>';
+                    return;
+                }
+                list.innerHTML = res.data.map(n => `
+                    <li class="insight-item">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <strong>${n.title}</strong>
+                            <button class="btn btn-sm btn-icon text-danger" onclick="deleteFacultyNotice(${n.id})"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <p style="font-size:13px; margin: 4px 0;">${n.content}</p>
+                        <small>${new Date(n.created_at).toLocaleDateString()} • ${n.author_name}</small>
+                    </li>
+                `).join('');
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function submitFacultyNotice(e) {
+        e.preventDefault();
+        const btn = e.target.querySelector('button');
+        setLoading(btn, true);
+        try {
+            const data = {
+                title: document.getElementById('facultyNoticeTitle').value,
+                content: document.getElementById('facultyNoticeContent').value,
+                target_role: 'Student'
+            };
+            const res = await fetchAuth('/api/notices', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+            if (res.error) throw new Error(res.error);
+            showToast('Notice posted', 'success');
+            e.target.reset();
+            loadFacultyNotices();
+        } catch (error) {
+            showToast(error.message, 'error');
+        } finally {
+            setLoading(btn, false);
+        }
+    }
+
+    async function deleteFacultyNotice(id) {
+        if (!confirm('Delete notice?')) return;
+        try {
+            const res = await fetchAuth('/api/notices/' + id, { method: 'DELETE' });
+            if (res.error) throw new Error(res.error);
+            showToast('Notice deleted', 'success');
+            loadFacultyNotices();
+        } catch (e) {
+            showToast(e.message, 'error');
+        }
+    }
+
+    async function loadFacultyResources() {
+        const tbody = document.getElementById('facultyResourcesTable');
+        try {
+            const res = await fetchAuth('/api/resources');
+            if (res.data) {
+                if (res.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center">No resources shared.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = res.data.map(r => `
+                    <tr>
+                        <td>
+                            <a href="${r.resource_link}" target="_blank" style="color:var(--primary); font-weight:600;">${r.title}</a>
+                            <div style="font-size:12px; color:#64748b;">${r.description || ''}</div>
+                        </td>
+                        <td>${r.subject_name || 'General'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteFacultyResource(${r.id})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function submitFacultyResource(e) {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        setLoading(btn, true);
+        try {
+            let subj = document.getElementById('facultyResourceSubject').value;
+            const data = {
+                title: document.getElementById('facultyResourceTitle').value,
+                description: document.getElementById('facultyResourceDesc').value,
+                resource_link: document.getElementById('facultyResourceLink').value,
+                subject_id: subj ? parseInt(subj) : null
+            };
+            const res = await fetchAuth('/api/resources', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+            if (res.error) throw new Error(res.error);
+            showToast(res.message, 'success');
+            e.target.reset();
+            loadFacultyResources();
+        } catch (error) {
+            showToast(error.message, 'error');
+        } finally {
+            setLoading(btn, false);
+        }
+    }
+
+    async function deleteFacultyResource(id) {
+        if (!confirm('Delete resource?')) return;
+        try {
+            const res = await fetchAuth('/api/resources/' + id, { method: 'DELETE' });
+            if (res.error) throw new Error(res.error);
+            showToast('Resource deleted', 'success');
+            loadFacultyResources();
+        } catch (e) {
+            showToast(e.message, 'error');
+        }
+    }
+
+    // Initialize after some delay to ensure page data is ready
+    setTimeout(() => {
+        loadFacultyNotices();
+        loadFacultyResources();
+    }, 800);
+</script>
+{% endblock %}
