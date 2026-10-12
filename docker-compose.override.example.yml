@@ -1,0 +1,72 @@
+# Example override — NOT active, NOT production-ready
+# Copy to `docker-compose.override.yml` locally for dev only. Never commit
+# the copy with real values. This file uses placeholders, never credentials.
+#
+# Port map (proposed):
+#   01-college-erp          -> 8001
+#   02-timetable-scheduler  -> 8002
+#   03-rag-college-chatbot  -> 3000
+#   04-rfid-library         -> 8004 reserved placeholder (see below)
+#   05-campus-intelligence  -> 5000
+#
+# App 04 decision: hardware-coupled (UHF-RFID). Either reserve 8004 as an
+# explicitly unimplemented placeholder or exclude it from the runnable
+# example. Owner to confirm actual run requirements before enabling.
+
+name: edusense-ai-example
+
+services:
+  postgres-rag:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    env_file:
+      - ./apps/03-rag-college-chatbot/.env.example
+    environment:
+      POSTGRES_DB: college_rag_example
+    volumes:
+      - postgres-rag-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d college_rag_example"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-intel:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file:
+      - ./apps/05-campus-intelligence/.env.example
+    volumes:
+      - postgres-intel-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Placeholders — wire build/dockerfile per app after verifying each app's
+  # actual Dockerfile, env vars, and DB dependency. Not runnable as-is.
+  erp-example:
+    image: python:3.12-slim
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres-intel:
+        condition: service_healthy
+
+  scheduler-example:
+    image: python:3.12-slim
+    ports:
+      - "8002:8002"
+
+  chatbot-example:
+    image: node:20-alpine
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres-rag:
+        condition: service_healthy
+
+volumes:
+  postgres-rag-data:
+  postgres-intel-data:
