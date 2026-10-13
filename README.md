@@ -11,6 +11,8 @@ apps/
   03-rag-college-chatbot/  # RAG-Based College AI Assistant (Next.js 14 + pgvector)
   04-rfid-library/         # RFID-Based Automated Library Checkout System (Django + UHF RFID)
   05-campus-intelligence/  # Smart Campus Intelligence & Placement System (Flask + PostgreSQL)
+  06-campus-portal/         # Static multi-role campus shell (placeholder; superseded by 07)
+  07-campus-connect/        # Attendance, marks & CGPA portal for one department (Next.js)
 ```
 
 ## Sources & Attribution
@@ -22,6 +24,7 @@ apps/
 | 03-rag-college-chatbot | https://github.com/25A31A4264/RAG-Based-College-Chatbot | No explicit LICENSE (retain original author rights) |
 | 04-rfid-library | https://github.com/AliShahram/RFID-Library-Management-System | No explicit LICENSE (Earlham Capstone, retain author rights) |
 | 05-campus-intelligence | https://github.com/mahesh-lute-9/smart-campus-intelligence-system | MIT |
+| 07-campus-connect | Original work (no upstream repo) | MIT |
 
 All credit to original authors. See `ATTRIBUTION.md` for details.
 Each sub-app retains its own README and license where provided.
