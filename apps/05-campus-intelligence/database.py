@@ -79,7 +79,7 @@ def release_db_connection(conn, *, close=False):
         return
 
     if close:
-        conn.close()
+        get_db_pool().putconn(conn, close=True)
         return
 
     get_db_pool().putconn(conn)

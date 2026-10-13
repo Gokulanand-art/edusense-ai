@@ -58,13 +58,16 @@ def api_leaderboard():
     Returns: ranked list + calling student's rank (if role=Student)
     """
     from flask import g
+    from services.readiness_service import get_all_scored_students
 
     limit      = min(int(request.args.get("limit", 25)), 100)
     department = request.args.get("department")
     institution_id = g.institution_id
 
     try:
-        all_students = get_top_students(institution_id=institution_id)
+        # Fetch the full ordered set (get_top_students defaults to limit=5,
+        # which would truncate total/my_rank) then slice for the page.
+        all_students = get_all_scored_students(institution_id=institution_id)
 
         # Filter by dept if requested
         if department:

@@ -18,12 +18,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify message exists
+    // Verify message exists and belongs to the caller (same ownership rule as
+    // requireAdmin/requireAuth: owners plus ADMINs; 404 to avoid user enumeration).
     const message = await prisma.message.findUnique({
       where: { id: messageId },
+      include: {
+        conversation: { select: { userId: true } },
+      },
     });
 
     if (!message) {
+      return NextResponse.json({ error: "Message not found" }, { status: 404 });
+    }
+
+    if (message.conversation?.userId !== user.id && user.role !== "ADMIN") {
       return NextResponse.json({ error: "Message not found" }, { status: 404 });
     }
 

@@ -22,6 +22,6 @@ RECORD_TYPE_CHOICES = (
 
 RECORD_STATUS_CHOICES = (
     ('', ("-- Status")),
-    ('True', ("Active")),
-    ('False', ("Completed")),
+    (True, ("Active")),
+    (False, ("Completed")),
 )

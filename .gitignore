@@ -6,6 +6,9 @@ db.sqlite3
 *.log
 venv/
 .env
+# Env variants — never commit real values; keep safe examples trackable
+.env.*
+!.env.example
 # Django
 staticfiles/
 media/

@@ -149,7 +149,7 @@ class Attendance(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     attendanceclass = models.ForeignKey(AttendanceClass, on_delete=models.CASCADE, default=1)
     date = models.DateField(default='2018-10-23')
-    status = models.BooleanField(default='True')
+    status = models.BooleanField(default=True)
 
     def __str__(self):
         sname = Student.objects.get(name=self.student)
@@ -246,7 +246,7 @@ class Marks(models.Model):
 class MarksClass(models.Model):
     assign = models.ForeignKey(Assign, on_delete=models.CASCADE)
     name = models.CharField(max_length=50, choices=test_name, default='Internal test 1')
-    status = models.BooleanField(default='False')
+    status = models.BooleanField(default=False)
 
     class Meta:
         unique_together = (('assign', 'name'),)
@@ -267,7 +267,7 @@ class AttendanceRange(models.Model):
 
 
 def daterange(start_date, end_date):
-    for n in range(int((end_date - start_date).days)):
+    for n in range(int((end_date - start_date).days + 1)):
         yield start_date + timedelta(n)
 
 

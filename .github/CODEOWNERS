@@ -1,0 +1,37 @@
+# CODEOWNERS — EduSense-AI (M2 P0 draft)
+
+# Phase 0 verified: root has no docs/ or .github/ before this change;
+# /lib and /app/api do not exist yet. Entries below use reserved M2 paths
+# and require real handles before enforcement.
+#
+# CODEOWNERS alone does not enforce review. Repository rules/rulesets must
+# require code-owner review + status checks separately.
+
+# Default: unresolved — requires owner decision
+*                           TODO-needs-owner
+
+# M2 reserved surface (docs + future implementation paths)
+# TODO: replace TODO-m2-owner with actual GitHub user/team handle
+/docs/m2-ownership.md       TODO-m2-owner
+/docs/m2-phase-gates.md     TODO-m2-owner
+/docs/phase0-verification.md TODO-m2-owner
+/docs/api-contracts/        TODO-m2-owner
+/docs/validation-quarantine-plan.md TODO-m2-owner
+/docs/SECURITY-FINDING-env-production.md TODO-m2-owner
+/docs/dependency-risk.md    TODO-m2-owner
+/lib/data.ts                TODO-m2-owner
+/lib/api.ts                 TODO-m2-owner
+/app/api/students/          TODO-m2-owner
+/app/api/analytics/summary/ TODO-m2-owner
+
+# App areas — leave to respective owners, do not assign to M2
+/apps/01-college-erp/       TODO-app-owner
+/apps/02-timetable-scheduler/ TODO-app-owner
+/apps/03-rag-college-chatbot/ TODO-app-owner
+/apps/04-rfid-library/      TODO-app-owner
+/apps/05-campus-intelligence/ TODO-app-owner
+
+# Governance/infra — requires platform/repo owner
+/.github/                   TODO-repo-owner
+/SECURITY.md                TODO-repo-owner
+/docker-compose.override.example.yml TODO-repo-owner

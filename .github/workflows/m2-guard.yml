@@ -1,0 +1,55 @@
+# M2 guard — path-scoped, not enforced until required by repo rules
+name: m2-guard
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feat/m2-api-integration-p0]
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout with full history for base comparison
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify base is origin/main
+        run: |
+          git fetch origin main --depth=1
+          echo "Base ref: origin/main"
+          git rev-parse --verify origin/main
+
+      - name: List changed paths (rename-aware)
+        run: |
+          BASE="origin/main"
+          git diff --name-status --find-renames "$BASE...HEAD" | tee changed.txt
+          cat changed.txt
+
+      - name: Fail on protected M1/M3/M4 paths without approval label
+        env:
+          HAS_APPROVAL: ${{ contains(github.event.pull_request.labels.*.name, 'm2-cross-owner-approved') }}
+        run: |
+          PROTECTED='^(lib/scoring\.ts|lib/risk\.ts|app/.*/dashboard|apps/01-college-erp/|apps/02-timetable-scheduler/|apps/03-rag-college-chatbot/|apps/04-rfid-library/|apps/05-campus-intelligence/)'
+          # Allowed M2 scope for P0
+          ALLOWED='^(\.github/CODEOWNERS|\.github/workflows/m2-guard\.yml|SECURITY\.md|docs/.*|docker-compose\.override\.example\.yml|\.gitignore)$'
+          FAIL=0
+          while IFS= read -r line; do
+            path=$(echo "$line" | awk '{print $NF}')
+            if echo "$path" | grep -Eq "$PROTECTED"; then
+              if [ "$HAS_APPROVAL" != "true" ]; then
+                echo "::error::Protected path without approval: $path"
+                FAIL=1
+              fi
+            elif echo "$path" | grep -Eq "$ALLOWED"; then
+              echo "Allowed M2 path: $path"
+            else
+              echo "::warning::Unclassified path (review needed): $path"
+            fi
+          done < changed.txt
+          exit $FAIL

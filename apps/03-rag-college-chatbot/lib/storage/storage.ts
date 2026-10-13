@@ -31,15 +31,35 @@ export async function saveUploadedFile(
   };
 }
 
-export async function readUploadedFile(filePath: string): Promise<Buffer> {
+function resolveInsideUploads(filePath: string): string {
+  if (!filePath || typeof filePath !== "string") {
+    throw new Error("Invalid file path");
+  }
+  if (path.isAbsolute(filePath)) {
+    throw new Error("Invalid file path: absolute paths are not allowed");
+  }
+  if (filePath.split(/[\\/]/).includes("..")) {
+    throw new Error("Invalid file path: '..' segments are not allowed");
+  }
+  const uploadDir = process.env.STORAGE_LOCAL_DIR || "./public/uploads";
+  const absoluteDir = path.resolve(process.cwd(), uploadDir);
   const absolutePath = path.resolve(process.cwd(), filePath);
+  const dirWithSep = absoluteDir.endsWith(path.sep) ? absoluteDir : absoluteDir + path.sep;
+  if (!absolutePath.startsWith(dirWithSep)) {
+    throw new Error("Invalid file path: outside the uploads directory");
+  }
+  return absolutePath;
+}
+
+export async function readUploadedFile(filePath: string): Promise<Buffer> {
+  const absolutePath = resolveInsideUploads(filePath);
   return await fs.readFile(absolutePath);
 }
 
 export async function deleteUploadedFile(filePath?: string | null): Promise<void> {
   if (!filePath) return;
   try {
-    const absolutePath = path.resolve(process.cwd(), filePath);
+    const absolutePath = resolveInsideUploads(filePath);
     await fs.unlink(absolutePath);
   } catch {
     // Ignore file deletion error if file does not exist

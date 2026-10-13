@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db/prisma";
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password, role } = await req.json();
+    const { name, email, password } = await req.json();
 
     if (!email || !password || !name) {
       return NextResponse.json(
@@ -37,8 +37,10 @@ export async function POST(req: NextRequest) {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Default to STUDENT unless specified and valid
-    const userRole = role === "ADMIN" ? "ADMIN" : "STUDENT";
+    // This is an unauthenticated route: always create STUDENT accounts.
+    // TODO: add a dedicated admin-promotion endpoint guarded by requireAdmin
+    // instead of ever accepting a role from the client here.
+    const userRole = "STUDENT";
 
     const user = await prisma.user.create({
       data: {

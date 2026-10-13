@@ -35,45 +35,58 @@ export async function POST(
       data: { status: "PROCESSING", errorMessage: null },
     });
 
-    // Remove existing chunks
-    await prisma.documentChunk.deleteMany({
-      where: { documentId: document.id },
-    });
-
     try {
+      // Extract + embed into a temp array FIRST, before touching stored chunks,
+      // so a failure here leaves the existing chunks intact.
       const buffer = await readUploadedFile(document.filePath);
       const extraction = await extractAndProcessDocument(buffer, document.fileName);
 
-      for (const chunk of extraction.chunks) {
-        const embedding = await generateEmbedding(chunk.content);
-        const vectorJson = JSON.stringify(embedding);
-
-        const createdChunk = await prisma.documentChunk.create({
-          data: {
-            documentId: document.id,
-            content: chunk.content,
-            chunkIndex: chunk.chunkIndex,
-            pageNumber: chunk.pageNumber,
-            sectionTitle: chunk.sectionTitle,
-            tokenCount: chunk.tokenCount,
-            vectorJson,
-          },
-        });
-
-
+      if (extraction.chunks.length === 0) {
+        throw new Error("No readable text could be extracted from this document");
       }
 
-      const updatedDoc = await prisma.document.update({
-        where: { id: document.id },
-        data: {
-          status: "READY",
-          metadata: JSON.stringify({
-            pageCount: extraction.pageCount,
-            chunkCount: extraction.chunks.length,
-            reprocessedAt: new Date().toISOString(),
-          }),
-        },
-      });
+      const chunksToCreate: {
+        documentId: string;
+        content: string;
+        chunkIndex: number;
+        pageNumber?: number | null;
+        sectionTitle?: string | null;
+        tokenCount: number;
+        vectorJson: string;
+      }[] = [];
+      for (const chunk of extraction.chunks) {
+        const embedding = await generateEmbedding(chunk.content);
+        chunksToCreate.push({
+          documentId: document.id,
+          content: chunk.content,
+          chunkIndex: chunk.chunkIndex,
+          pageNumber: chunk.pageNumber,
+          sectionTitle: chunk.sectionTitle,
+          tokenCount: chunk.tokenCount,
+          vectorJson: JSON.stringify(embedding),
+        });
+      }
+
+      // Atomically swap old chunks for the new ones and mark READY.
+      const [, , updatedDoc] = await prisma.$transaction([
+        prisma.documentChunk.deleteMany({
+          where: { documentId: document.id },
+        }),
+        prisma.documentChunk.createMany({
+          data: chunksToCreate,
+        }),
+        prisma.document.update({
+          where: { id: document.id },
+          data: {
+            status: "READY",
+            metadata: JSON.stringify({
+              pageCount: extraction.pageCount,
+              chunkCount: extraction.chunks.length,
+              reprocessedAt: new Date().toISOString(),
+            }),
+          },
+        }),
+      ]);
 
       return NextResponse.json({
         message: "Document reprocessed successfully",

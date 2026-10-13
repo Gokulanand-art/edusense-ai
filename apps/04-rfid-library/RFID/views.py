@@ -2,7 +2,7 @@
 #Generic Imports
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest, Http404
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views import View
 
@@ -42,6 +42,7 @@ class SearchHomePage(LoginRequiredMixin, View):
         #Check if the user has picked a table
         #If not return to the page and give them a message
         if search_form['table'].value():
+            self.message = ''
             #If the table is object table
             if search_form['table'].value() == 'object':
                 obj_list = Object.objects.all()
@@ -64,27 +65,21 @@ class SearchHomePage(LoginRequiredMixin, View):
                 if search_form['name'].value():
                     name = search_form['name'].value()
                     try:
-                        User.objects.get(first_name__iexact=name)
+                        user = User.objects.get(first_name__iexact=name)
+                        records_list = Records.objects.filter(user_id=user.user_id)
+                    except User.DoesNotExist:
                         try:
-                            user = User.objects.get(first_name__iexact=name)
-                        except ObjectDoesNotExist:
-                            user=None
-                        USER_ID = user.user_id
-                        records_list = Records.objects.filter(user_id=USER_ID)
-
-                    except:
-                        try:
-                            object = Object.objects.get(name__iexact=name)
-                        except ObjectDoesNotExist:
-                            object=None
-                        OBJECT_ID = object.object_id
-                        records_list = Records.objects.filter(object_id=OBJECT_ID)
-                    query_result = RecordsFilter(request.GET, records_list)
+                            obj = Object.objects.get(name__iexact=name)
+                            records_list = Records.objects.filter(object_id=obj.object_id)
+                        except Object.DoesNotExist:
+                            records_list = Records.objects.none()
+                            self.message = 'No matching user or object found!'
+                    query_result = RecordsFilter(request.GET, queryset=records_list)
                 else:
                     query_result = RecordsFilter(request.GET, records_list)
                 table = 'record'
 
-            context = {'form':self.form, 'table':table, 'qResult':query_result}
+            context = {'form':self.form, 'table':table, 'qResult':query_result, 'message': self.message}
 
         else:
             self.message = 'Please select a database!'
@@ -146,12 +141,14 @@ class GetUserPageView(LoginRequiredMixin, View):
             else:
                 user_email = user_form['email'].value()
                 return get_object_or_404(User, email=user_email)
-        except:
-            redirect('user')
+        except Http404:
+            return redirect('user')
 
     def post(self, request):
         get_id_form = GetUser(request.POST)
         obj = self.get_user(get_id_form)
+        if isinstance(obj, HttpResponse):
+            return obj
         if obj is None:
             message = "The user does not exist!"
         else:
@@ -171,16 +168,20 @@ class UpdateUserPageView(LoginRequiredMixin, View):
     template_name = 'RFID/user.html'
 
     def post(self, request):
+        message = ''
         if 'Update' in request.POST:
             form = AddUser(request.POST)
-            id = form['user_id'].value()
-            User.objects.filter(user_id=id).update(
-            first_name = form['first_name'].value(),
-            last_name = form['last_name'].value(),
-            email = form['email'].value(),
-            phone = form['phone'].value(),
-            )
-            message = 'User information was successfuly updated'
+            if not form.is_valid():
+                message = 'Invalid user data'
+            else:
+                id = form['user_id'].value()
+                User.objects.filter(user_id=id).update(
+                first_name = form['first_name'].value(),
+                last_name = form['last_name'].value(),
+                email = form['email'].value(),
+                phone = form['phone'].value(),
+                )
+                message = 'User information was successfuly updated'
 
         elif 'Delete' in request.POST:
             form = AddUser(request.POST)
@@ -189,6 +190,9 @@ class UpdateUserPageView(LoginRequiredMixin, View):
             user.delete()
 
             message = 'User information successfully deleted'
+
+        else:
+            return HttpResponseBadRequest('Unknown action')
 
         get_id_form = GetUser()
         form = AddUser()
@@ -299,17 +303,21 @@ class UpdateSingleObjectView(LoginRequiredMixin, View):
 
 
     def post(self, request):
+        message = ''
         if 'Update' in request.POST:
             form = AddObject(request.POST)
-            id = form['object_id'].value()
-            Object.objects.filter(object_id=id).update(
-            object_id = form['object_id'].value(),
-            name = form['name'].value(),
-            availability= form['availability'].value(),
-            max_time = form['max_time'].value(),
-            location = form['location'].value(),
-            )
-            message = 'Object information was successfuly updated'
+            if not form.is_valid():
+                message = 'Invalid object data'
+            else:
+                id = form['object_id'].value()
+                Object.objects.filter(object_id=id).update(
+                object_id = form['object_id'].value(),
+                name = form['name'].value(),
+                availability= form['availability'].value(),
+                max_time = form['max_time'].value(),
+                location = form['location'].value(),
+                )
+                message = 'Object information was successfuly updated'
 
         elif 'Delete' in request.POST:
             form = AddObject(request.POST)
@@ -318,6 +326,9 @@ class UpdateSingleObjectView(LoginRequiredMixin, View):
             obj.delete()
 
             message = 'Object was successfully deleted'
+
+        else:
+            return HttpResponseBadRequest('Unknown action')
 
         get_id_form = GetObject()
         form = AddObject()
@@ -338,6 +349,9 @@ class UpdateGroupObjectView(LoginRequiredMixin, View):
 
     def post(self, request):
         form = GetGroupObject(request.POST)
+        message = ''
+        if not form.is_valid():
+            return HttpResponseBadRequest('Invalid object data')
         name = form['name'].value()
 
         if 'Update' in request.POST:
@@ -351,6 +365,9 @@ class UpdateGroupObjectView(LoginRequiredMixin, View):
         elif 'Delete' in request.POST:
             Object.objects.filter(name=name).delete()
             message = 'Group of objects were successfully deleted'
+
+        else:
+            return HttpResponseBadRequest('Unknown action')
 
         get_id_form = GetObject()
         form = AddObject()

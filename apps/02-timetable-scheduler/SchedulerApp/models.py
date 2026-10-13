@@ -52,7 +52,7 @@ class MeetingTime(models.Model):
     pid = models.CharField(max_length=4, primary_key=True)
     time = models.CharField(max_length=50,
                             choices=TIME_SLOTS,
-                            default='11:30 - 12:30')
+                            default='8:45 - 9:45')
     day = models.CharField(max_length=15, choices=DAYS_OF_WEEK)
 
     def __str__(self):
@@ -62,7 +62,7 @@ class MeetingTime(models.Model):
 class Course(models.Model):
     course_number = models.CharField(max_length=5, primary_key=True)
     course_name = models.CharField(max_length=40)
-    max_numb_students = models.CharField(max_length=65)
+    max_numb_students = models.IntegerField(default=0)
     instructors = models.ManyToManyField(Instructor)
 
     def __str__(self):

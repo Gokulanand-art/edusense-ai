@@ -14,7 +14,7 @@ interface AnalyticsProps {
       total: number;
       up: number;
       down: number;
-      satisfactionRate: number;
+      satisfactionRate: number | null;
     };
     categoryDistribution?: { category: string; count: number }[];
   } | null;
@@ -96,7 +96,9 @@ export function AnalyticsCards({ analytics }: AnalyticsProps) {
         </div>
         <div>
           <div className="text-xl sm:text-2xl font-bold text-white">
-            {analytics.feedback.satisfactionRate}%
+            {analytics.feedback.satisfactionRate == null
+              ? "N/A"
+              : `${analytics.feedback.satisfactionRate}%`}
           </div>
           <div className="flex items-center gap-2 mt-1 text-[11px] sm:text-xs text-slate-400">
             <span className="text-emerald-400">👍 {analytics.feedback.up}</span>

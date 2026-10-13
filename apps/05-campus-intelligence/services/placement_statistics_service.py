@@ -230,7 +230,7 @@ def get_placement_summary(institution_id: int) -> dict:
                     COUNT(DISTINCT company_name)                       AS companies_count
                 FROM placement_outcomes
                 WHERE institution_id = %s
-                  AND status IN ('accepted', 'joined', 'offered')
+                  AND status IN ('accepted', 'joined')
             """, (institution_id,))
             row = cur.fetchone()
 
@@ -288,7 +288,7 @@ def get_department_placement_rates(institution_id: int) -> list:
                     FROM placement_outcomes po
                     JOIN students s ON s.id = po.student_id
                     WHERE po.institution_id = %s
-                      AND po.status IN ('accepted', 'joined', 'offered')
+                      AND po.status IN ('accepted', 'joined')
                     GROUP BY s.department
                 )
                 SELECT ds.department,
@@ -328,7 +328,7 @@ def get_company_placement_breakdown(institution_id: int, limit: int = 15) -> lis
                        MAX(package_lpa)                     AS max_pkg
                 FROM placement_outcomes
                 WHERE institution_id = %s
-                  AND status IN ('accepted', 'joined', 'offered')
+                  AND status IN ('accepted', 'joined')
                 GROUP BY company_name
                 ORDER BY offers DESC, avg_pkg DESC
                 LIMIT %s
@@ -359,7 +359,7 @@ def get_monthly_placement_trend(institution_id: int, months: int = 12) -> list:
                 FROM placement_outcomes
                 WHERE institution_id = %s
                   AND offer_date >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '%s months'
-                  AND status IN ('accepted', 'joined', 'offered')
+                  AND status IN ('accepted', 'joined')
                 GROUP BY DATE_TRUNC('month', offer_date)
                 ORDER BY month_date ASC
             """, (institution_id, months))
@@ -388,7 +388,7 @@ def get_package_distribution(institution_id: int) -> dict:
                     COUNT(*) FILTER (WHERE package_lpa >= 12)                AS gte12
                 FROM placement_outcomes
                 WHERE institution_id = %s
-                  AND status IN ('accepted', 'joined', 'offered')
+                  AND status IN ('accepted', 'joined')
             """, (institution_id,))
             row = cur.fetchone()
 

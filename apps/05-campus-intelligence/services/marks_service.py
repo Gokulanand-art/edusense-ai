@@ -74,6 +74,9 @@ def add_marks(student_id, subject_id, marks, exam_type):
 
 
 def save_marks(student_id, subject_id, marks, exam_type=None):
+    # Single-transaction check-then-write via the codebase's get_db_connection
+    # context manager (commit on success, rollback on error). The SELECT takes
+    # a row lock so concurrent updates to the same row serialize.
     with get_db_connection() as conn:
         ensure_marks_table_consistency(conn)
 
@@ -87,6 +90,7 @@ def save_marks(student_id, subject_id, marks, exam_type=None):
                   AND exam_type IS NOT DISTINCT FROM %s
                 ORDER BY created_at DESC NULLS LAST, id DESC
                 LIMIT 1
+                FOR UPDATE
                 """,
                 (student_id, subject_id, exam_type),
             )
@@ -116,7 +120,7 @@ def save_marks(student_id, subject_id, marks, exam_type=None):
     return action
 
 
-def get_marks():
+def get_marks(institution_id=None):
     with get_db_connection() as conn:
         ensure_marks_table_consistency(conn)
 
@@ -126,7 +130,9 @@ def get_marks():
                 FROM marks m
                 JOIN students s ON m.student_id = s.id
                 JOIN subjects sub ON m.subject_id = sub.id
-            """)
+                WHERE (%s IS NULL OR s.institution_id = %s)
+                  AND (%s IS NULL OR sub.institution_id = %s)
+            """, (institution_id, institution_id, institution_id, institution_id))
 
             rows = cur.fetchall()
 

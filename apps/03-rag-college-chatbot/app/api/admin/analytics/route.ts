@@ -35,14 +35,14 @@ export async function GET() {
       ]);
 
       const satisfactionRate =
-        totalFeedbacks > 0 ? Math.round((upFeedbacks / totalFeedbacks) * 100) : 100;
+        totalFeedbacks > 0 ? Math.round((upFeedbacks / totalFeedbacks) * 100) : null;
 
       return NextResponse.json({
         analytics: {
-          totalDocuments: Math.max(totalDocuments, 4),
-          readyDocuments: Math.max(readyDocuments, 4),
+          totalDocuments,
+          readyDocuments,
           failedDocuments,
-          totalChunks: Math.max(totalChunks, 12),
+          totalChunks,
           totalConversations,
           totalQuestionsAsked: totalMessages,
           feedback: {
@@ -51,43 +51,30 @@ export async function GET() {
             down: downFeedbacks,
             satisfactionRate,
           },
-          categoryDistribution:
-            categoriesGroup.length > 0
-              ? categoriesGroup.map((c) => ({
-                  category: c.category,
-                  count: c._count.id,
-                }))
-              : [
-                  { category: "Academics", count: 1 },
-                  { category: "Hostel", count: 1 },
-                  { category: "Fees & Scholarships", count: 1 },
-                  { category: "Placements", count: 1 },
-                ],
+          categoryDistribution: categoriesGroup.map((c) => ({
+            category: c.category,
+            count: c._count.id,
+          })),
         },
       });
     } catch (dbErr) {
       console.warn("Analytics DB query fallback:", (dbErr as any)?.message);
-      // Resilient fallback stats
+      // Honest fallback when the DB is unreachable: zeros, not fabricated floors.
       return NextResponse.json({
         analytics: {
-          totalDocuments: 4,
-          readyDocuments: 4,
+          totalDocuments: 0,
+          readyDocuments: 0,
           failedDocuments: 0,
-          totalChunks: 12,
+          totalChunks: 0,
           totalConversations: 0,
           totalQuestionsAsked: 0,
           feedback: {
             total: 0,
             up: 0,
             down: 0,
-            satisfactionRate: 100,
+            satisfactionRate: null,
           },
-          categoryDistribution: [
-            { category: "Academics", count: 1 },
-            { category: "Hostel", count: 1 },
-            { category: "Fees & Scholarships", count: 1 },
-            { category: "Placements", count: 1 },
-          ],
+          categoryDistribution: [],
         },
       });
     }

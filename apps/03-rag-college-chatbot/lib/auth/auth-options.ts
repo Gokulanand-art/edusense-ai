@@ -3,6 +3,12 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db/prisma";
 
+if (!process.env.NEXTAUTH_SECRET && !process.env.AUTH_SECRET) {
+  throw new Error(
+    "Missing required environment variable: NEXTAUTH_SECRET (or AUTH_SECRET). Set it via your environment — see .env.example."
+  );
+}
+
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
@@ -27,26 +33,9 @@ export const authOptions: NextAuthOptions = {
         const email = credentials.email.toLowerCase().trim();
         const password = credentials.password;
 
-        // 1. Check built-in demo credentials for guaranteed zero-downtime logins
-        if (email === "admin@college.edu" && (password === "Admin@123" || password === "admin123")) {
-          return {
-            id: "66d300000000000000000001",
-            name: "College Administrator",
-            email: "admin@college.edu",
-            role: "ADMIN",
-          };
-        }
-
-        if (email === "student@college.edu" && (password === "Student@123" || password === "student123")) {
-          return {
-            id: "66d300000000000000000002",
-            name: "Alex Johnson",
-            email: "student@college.edu",
-            role: "STUDENT",
-          };
-        }
-
-        // 2. Query active MongoDB database
+        // Authenticate against the database only. The demo users
+        // (admin@college.edu, student@college.edu) are seeded into the DB
+        // with bcrypt password hashes via scripts/seed.ts.
         try {
           const user = await prisma.user.findUnique({
             where: { email },
@@ -87,5 +76,5 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || "default-production-nextauth-secret-key-32-chars-min",
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
 };

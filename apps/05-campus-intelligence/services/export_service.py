@@ -11,6 +11,16 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+CSV_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r", "\n")
+
+
+def sanitize_csv_cell(value):
+    """Prefix cells starting with = + - @ (also tab/CR/LF) with a single quote."""
+    if isinstance(value, str) and value[:1] in ("=", "+", "-", "@", "\t", "\r", "\n"):
+        return "'" + value
+    return value
+
+
 class ExportService:
     """Service for exporting data in various formats."""
     
@@ -34,13 +44,13 @@ class ExportService:
             # Write header
             writer.writeheader()
             
-            # Write data
+            # Write data (sanitized against CSV formula injection)
             for row in data:
                 if isinstance(row, dict):
-                    writer.writerow(row)
+                    writer.writerow({k: sanitize_csv_cell(v) for k, v in row.items()})
                 else:
                     # Convert tuple/list to dict
-                    row_dict = {columns[i]: row[i] for i in range(len(columns))}
+                    row_dict = {columns[i]: sanitize_csv_cell(row[i]) for i in range(len(columns))}
                     writer.writerow(row_dict)
             
             csv_content = output.getvalue()

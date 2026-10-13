@@ -1,7 +1,8 @@
 import smtplib
-import random
+import secrets
 import string
 import datetime
+import hashlib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import logging
@@ -12,7 +13,11 @@ from database import get_db_connection
 logger = logging.getLogger(__name__)
 
 def generate_otp(length=6):
-    return ''.join(random.choices(string.digits, k=length))
+    return ''.join(secrets.choice(string.digits) for _ in range(length))
+
+
+def _hash_otp(otp):
+    return hashlib.sha256(otp.encode("utf-8")).hexdigest()
 
 def send_otp_email(to_email, otp):
     try:
@@ -48,38 +53,52 @@ def send_otp_email(to_email, otp):
         logger.error(f"Failed to send OTP email to {to_email}: {str(e)}")
         return False
 
-def create_and_store_otp(email):
+def create_and_store_otp(email, institution_id=None):
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
-                # Check if user exists
-                cur.execute("SELECT id FROM users WHERE LOWER(email) = LOWER(%s)", (email,))
+                # Check if user exists (tenant-scoped when institution_id given)
+                cur.execute(
+                    "SELECT id FROM users WHERE LOWER(email) = LOWER(%s) AND (%s IS NULL OR institution_id = %s)",
+                    (email, institution_id, institution_id),
+                )
                 if not cur.fetchone():
                     return None # User not found
 
                 otp = generate_otp()
+                otp_hash = _hash_otp(otp)
                 expires_at = datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=15)
 
                 # Invalidate old OTPs
                 cur.execute("UPDATE password_reset_otps SET is_used = TRUE WHERE LOWER(email) = LOWER(%s)", (email,))
 
-                # Store new OTP
+                # Store OTP hash (password_reset_otps has no institution_id column;
+                # tenant binding is enforced via the users lookup above + the
+                # institution-scoped password UPDATE in the reset route)
                 cur.execute(
                     """
                     INSERT INTO password_reset_otps (email, otp, expires_at)
                     VALUES (%s, %s, %s)
                     """,
-                    (email, otp, expires_at)
+                    (email, otp_hash, expires_at)
                 )
                 return otp
     except Exception as e:
         logger.error(f"Failed to store OTP for {email}: {str(e)}")
         return None
 
-def verify_and_use_otp(email, otp):
+def verify_and_use_otp(email, otp, institution_id=None):
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
+                # Tenant check first: user must exist in this institution
+                cur.execute(
+                    "SELECT id FROM users WHERE LOWER(email) = LOWER(%s) AND (%s IS NULL OR institution_id = %s)",
+                    (email, institution_id, institution_id),
+                )
+                if not cur.fetchone():
+                    return False
+                otp_hash = _hash_otp(otp)
                 cur.execute(
                     """
                     SELECT id FROM password_reset_otps
@@ -89,7 +108,7 @@ def verify_and_use_otp(email, otp):
                       AND expires_at > %s
                     ORDER BY created_at DESC LIMIT 1
                     """,
-                    (email, otp, datetime.datetime.now(datetime.UTC))
+                    (email, otp_hash, datetime.datetime.now(datetime.UTC))
                 )
 
                 record = cur.fetchone()

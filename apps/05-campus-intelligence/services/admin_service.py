@@ -56,11 +56,20 @@ def _ensure_admin_reporting_tables(connection):
     ensure_attendance_table_consistency(connection)
 
 
+def _sanitize_csv_cell(value):
+    """Prefix cells starting with = + - @ (also tab/CR/LF) with a single quote."""
+    if isinstance(value, str) and value[:1] in ("=", "+", "-", "@", "\t", "\r", "\n"):
+        return "'" + value
+    return value
+
+
 def _build_csv_content(headers, rows):
     buffer = StringIO()
     writer = csv.writer(buffer)
     writer.writerow(headers)
-    writer.writerows(rows)
+    writer.writerows(
+        [[_sanitize_csv_cell(cell) for cell in row] for row in rows]
+    )
     return buffer.getvalue()
 
 
@@ -206,18 +215,24 @@ def get_operations_snapshot(institution_id=None):
             cur.execute(
                 """
                 SELECT COUNT(*)
-                FROM marks
-                WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '7 days'
-                """
+                FROM marks m
+                JOIN students s ON s.id = m.student_id
+                WHERE m.created_at >= CURRENT_TIMESTAMP - INTERVAL '7 days'
+                  AND (%s IS NULL OR s.institution_id = %s)
+                """,
+                (institution_id, institution_id),
             )
             marks_updates_last_7_days = cur.fetchone()[0]
 
             cur.execute(
                 """
                 SELECT COUNT(*)
-                FROM attendance
-                WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '7 days'
-                """
+                FROM attendance a
+                JOIN students s ON s.id = a.student_id
+                WHERE a.created_at >= CURRENT_TIMESTAMP - INTERVAL '7 days'
+                  AND (%s IS NULL OR s.institution_id = %s)
+                """,
+                (institution_id, institution_id),
             )
             attendance_updates_last_7_days = cur.fetchone()[0]
 
@@ -282,7 +297,7 @@ def get_data_quality_snapshot(institution_id=None):
                 """
                 SELECT COUNT(*)
                 FROM students
-                WHERE roll_number IS NULL OR TRIM(roll_number) = ''
+                WHERE (roll_number IS NULL OR TRIM(roll_number) = '')
                   AND (%s IS NULL OR institution_id = %s)
                 """
                 ,
@@ -294,7 +309,7 @@ def get_data_quality_snapshot(institution_id=None):
                 """
                 SELECT COUNT(*)
                 FROM students
-                WHERE department IS NULL OR TRIM(department) = ''
+                WHERE (department IS NULL OR TRIM(department) = '')
                   AND (%s IS NULL OR institution_id = %s)
                 """
                 ,
