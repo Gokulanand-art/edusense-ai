@@ -61,14 +61,20 @@ export async function POST(req: NextRequest) {
       try {
         const pastMessages = await prisma.message.findMany({
           where: { conversationId: activeConversationId },
-          orderBy: { createdAt: "asc" },
+          orderBy: { createdAt: "desc" },
           take: 6,
         });
 
-        history = pastMessages.map((m) => ({
-          role: m.role === "USER" ? "user" : "assistant",
-          content: m.content,
-        }));
+        // Newest-first for the take, then reverse to chronological order.
+        // Whitelist known roles; drop anything unexpected instead of
+        // mislabeling it as assistant content.
+        history = pastMessages
+          .filter((m) => m.role === "USER" || m.role === "ASSISTANT")
+          .map((m) => ({
+            role: (m.role === "USER" ? "user" : "assistant") as "user" | "assistant",
+            content: m.content,
+          }))
+          .reverse();
       } catch {
         history = [];
       }

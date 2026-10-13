@@ -71,8 +71,8 @@ def fetch_marks():
             error_resp, status_code = create_error_response("INVALID_PARAMS", "Invalid pagination parameters", 400, errors)
             return jsonify(error_resp), status_code
 
-        # Get all marks
-        all_marks = get_marks()
+        # Get all marks (tenant-scoped; super_admin sees all)
+        all_marks = get_marks(institution_id=None if user.get("is_super_admin") else user.get("institution_id"))
         
         # Apply pagination
         page = params['page']

@@ -6,8 +6,16 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 
 # SECURITY WARNING: keep the secret key used in production secret!
-with open('./secret_key.txt') as f:
-    SECRET_KEY = f.read().strip()
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    _secret_key_file = os.path.join(BASE_DIR, 'secret_key.txt')
+    try:
+        with open(_secret_key_file) as f:
+            SECRET_KEY = f.read().strip()
+    except (OSError, IOError):
+        raise RuntimeError(
+            'SECRET_KEY not set and secret_key.txt not found at %s. '
+            'Set the SECRET_KEY environment variable or create secret_key.txt.' % _secret_key_file)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False

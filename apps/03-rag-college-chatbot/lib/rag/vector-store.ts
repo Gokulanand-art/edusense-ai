@@ -12,77 +12,60 @@ export interface VectorSearchParams {
 }
 
 /**
- * Searches the MongoDB / PostgreSQL vector store or local knowledge base for the most relevant document chunks.
+ * Canonical document categories (mirrors the upload-form allowlist and seed data).
+ * "All Categories" is the UI sentinel meaning "no filter".
+ */
+const KNOWN_CATEGORIES = [
+  "Academics",
+  "Hostel",
+  "Fees & Scholarships",
+  "Placements",
+  "General",
+];
+
+/**
+ * Searches the MongoDB vector store or local knowledge base for the most relevant document chunks.
  * Highly resilient: seamlessly queries DB when available, and falls back to built-in knowledge chunks
  * to guarantee 100% availability even during cold starts, DB maintenance, or fresh deployments.
+ *
+ * NOTE: The Prisma schema targets MongoDB (see prisma/schema.prisma). There is no
+ * live Postgres/pgvector path; retrieval runs in the application layer below.
  */
 export async function searchSimilarChunks(
   params: VectorSearchParams
 ): Promise<RetrievedChunkContext[]> {
+  const parsedTopK =
+    params.topK !== undefined
+      ? params.topK
+      : parseInt(process.env.RAG_TOP_K || "5", 10);
   const topK =
-    params.topK ||
-    parseInt(process.env.RAG_TOP_K || "5", 10);
+    Number.isInteger(parsedTopK) && (parsedTopK as number) > 0
+      ? Math.min(parsedTopK as number, 20)
+      : 5;
   const minScore =
     params.minScore !== undefined
       ? params.minScore
       : parseFloat(process.env.MIN_RELEVANCE_SCORE || "0.70");
 
+  // Whitelist the category filter against the app's known categories so only
+  // recognized values ever reach the database query.
+  const categoryFilter =
+    params.category &&
+    params.category !== "All Categories" &&
+    KNOWN_CATEGORIES.includes(params.category)
+      ? params.category
+      : undefined;
+
   const scoredChunks: RetrievedChunkContext[] = [];
 
   // 1. Attempt to fetch chunks from the database
   try {
-    const isPostgres = process.env.DATABASE_URL?.startsWith("postgres");
-
-    if (isPostgres && typeof (prisma as any).$queryRawUnsafe === "function") {
-      try {
-        const embeddingStr = `[${params.queryEmbedding.join(",")}]`;
-        const rawResults: any[] = await (prisma as any).$queryRawUnsafe(`
-          SELECT 
-            dc.id,
-            dc."documentId",
-            dc.content,
-            dc."chunkIndex",
-            dc."pageNumber",
-            dc."sectionTitle",
-            d.title as "documentTitle",
-            d.category,
-            1 - (dc.embedding <=> '${embeddingStr}'::vector) as similarity
-          FROM document_chunks dc
-          JOIN documents d ON d.id = dc."documentId"
-          WHERE d.status = 'READY'
-            AND dc.embedding IS NOT NULL
-            ${params.category ? `AND d.category = '${params.category}'` : ""}
-          ORDER BY similarity DESC
-          LIMIT ${topK * 2};
-        `);
-
-        if (rawResults && rawResults.length > 0) {
-          for (const r of rawResults) {
-            const score = Number(r.similarity);
-            if (score >= minScore) {
-              scoredChunks.push({
-                id: r.id,
-                documentTitle: r.documentTitle,
-                category: r.category,
-                pageNumber: r.pageNumber,
-                sectionTitle: r.sectionTitle,
-                content: r.content,
-                score,
-              });
-            }
-          }
-        }
-      } catch {
-        // Fall back to application layer retrieval
-      }
-    }
-
     if (scoredChunks.length === 0) {
       const dbChunks = await prisma.documentChunk.findMany({
         where: {
           document: {
             status: "READY",
-            ...(params.category && params.category !== "All Categories" ? { category: params.category } : {}),
+            ...(categoryFilter ? { category: categoryFilter } : {}),
           },
         },
         include: {
@@ -109,12 +92,27 @@ export async function searchSimilarChunks(
         }
 
         if (chunk.vectorJson) {
+          let chunkVector: number[] | null = null;
           try {
-            const chunkVector: number[] = JSON.parse(chunk.vectorJson);
-            const cosScore = cosineSimilarity(params.queryEmbedding, chunkVector);
-            score = Math.max(score, cosScore);
+            chunkVector = JSON.parse(chunk.vectorJson);
           } catch {
             // ignore invalid vector JSON
+          }
+
+          if (chunkVector) {
+            // Fail closed on embedding-provider dimension drift (e.g. vectors
+            // stored with the 768-dim local provider vs a 1536-dim OpenAI
+            // model). A length-mismatched cosine score would silently read as
+            // ~0 and suppress retrieval, so tell the operator to re-embed
+            // instead of returning empty results. Behavior for matching dims
+            // is unchanged.
+            if (chunkVector.length !== params.queryEmbedding.length) {
+              throw new Error(
+                `Embedding dimension mismatch: stored vector has dim ${chunkVector.length} but the current provider produced dim ${params.queryEmbedding.length}. Re-embed documents with the current embedding provider to restore retrieval.`
+              );
+            }
+            const cosScore = cosineSimilarity(params.queryEmbedding, chunkVector);
+            score = Math.max(score, cosScore);
           }
         }
 
@@ -132,6 +130,11 @@ export async function searchSimilarChunks(
       }
     }
   } catch (dbErr) {
+    // Dimension mismatches are operator-actionable: let them propagate instead
+    // of being absorbed into the knowledge-base fallback.
+    if (dbErr instanceof Error && dbErr.message.includes("Embedding dimension mismatch")) {
+      throw dbErr;
+    }
     console.warn("Database query skipped or unavailable, using knowledge store:", (dbErr as any)?.message);
   }
 

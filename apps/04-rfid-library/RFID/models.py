@@ -61,7 +61,7 @@ class Records(models.Model):
     date = models.DateField(auto_now_add=True)
     time = models.TimeField(auto_now_add=True)
     type = models.CharField(max_length=1, choices=TYPE_CHOICES, default=CHECK_OUT)
-    status = models.BooleanField(choices=STATUS_CHOICES, default=CHECK_OUT)
+    status = models.BooleanField(choices=STATUS_CHOICES, default=True)
 
     class Meta:
         unique_together = (('user_id', 'object_id', 'date', 'time'),)

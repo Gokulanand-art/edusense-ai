@@ -322,7 +322,7 @@ def _access_filter(user_type, user_id, institution_id=None, is_super_admin=False
 
     public_filter = "is_public = TRUE"
     if institution_id is not None and not is_super_admin:
-        public_filter = "(is_public = TRUE AND (institution_id = %s OR institution_id IS NULL))"
+        public_filter = "(is_public = TRUE AND institution_id = %s)"
         params.append(institution_id)
     filters.append(public_filter)
 
@@ -397,10 +397,10 @@ def list_user_files(user_id, user_type="student", limit=50, offset=0, institutio
                            mime_type, content_sha256
                     FROM media
                     WHERE uploaded_by_user_id = %s
-                      AND (%s::INTEGER IS NULL OR institution_id = %s OR institution_id IS NULL)
+                      AND (%s::INTEGER IS NULL OR institution_id = %s)
                     ORDER BY created_at DESC
                     LIMIT %s OFFSET %s
-                    """,
+                """,
                     (user_id, institution_id, institution_id, limit, offset),
                 )
                 rows = cur.fetchall()
@@ -437,8 +437,8 @@ def delete_file(file_id, user_id, user_type="student", institution_id=None):
                     DELETE FROM media
                     WHERE file_id = %s
                       AND uploaded_by_user_id = %s
-                      AND (%s::INTEGER IS NULL OR institution_id = %s OR institution_id IS NULL)
-                    """,
+                      AND (%s::INTEGER IS NULL OR institution_id = %s)
+                """,
                     (file_id, user_id, institution_id, institution_id),
                 )
                 deleted = cur.rowcount
@@ -466,8 +466,8 @@ def make_file_public(file_id, user_id, user_type="student", is_public=True, inst
                         updated_at = CURRENT_TIMESTAMP
                     WHERE file_id = %s
                       AND uploaded_by_user_id = %s
-                      AND (%s::INTEGER IS NULL OR institution_id = %s OR institution_id IS NULL)
-                    """,
+                      AND (%s::INTEGER IS NULL OR institution_id = %s)
+                """,
                     (is_public, file_id, user_id, institution_id, institution_id),
                 )
                 updated = cur.rowcount
@@ -506,7 +506,7 @@ def _backfill_file_data_from_disk(connection=None):
                     continue
                 try:
                     resolved = path.resolve()
-                    if not str(resolved).lower().startswith(str(UPLOAD_FOLDER.resolve()).lower()):
+                    if not resolved.is_relative_to(UPLOAD_FOLDER.resolve()):
                         continue
                     file_bytes = resolved.read_bytes()
                     cur.execute(

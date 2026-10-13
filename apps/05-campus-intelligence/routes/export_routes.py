@@ -20,9 +20,9 @@ def _get_student_data(student_id, institution_id):
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
-                # Get basic student info
+                # Get basic student info (real students schema: no cgpa/status columns)
                 cur.execute("""
-                    SELECT id, name, email, department, cgpa, status
+                    SELECT id, name, email, department
                     FROM students
                     WHERE id = %s AND institution_id = %s
                 """, (student_id, institution_id))
@@ -36,8 +36,8 @@ def _get_student_data(student_id, institution_id):
                     'name': student[1],
                     'email': student[2],
                     'department': student[3],
-                    'cgpa': student[4],
-                    'status': student[5]
+                    'cgpa': None,
+                    'status': None
                 }
                 
                 # Get additional metrics
@@ -49,12 +49,12 @@ def _get_student_data(student_id, institution_id):
                 row = cur.fetchone()
                 result['avg_marks'] = row[0] if row else 0
                 
-                # Get attendance
+                # Get attendance (real schema: status='Present'/'Absent', no attendance_percentage)
                 cur.execute("""
-                    SELECT COALESCE(ROUND(AVG(attendance_percentage), 2), 0)
+                    SELECT COALESCE(ROUND(
+                        COUNT(*) FILTER (WHERE status = 'Present') * 100.0 / NULLIF(COUNT(*), 0), 2), 0)
                     FROM attendance
                     WHERE student_id = %s
-                    GROUP BY student_id
                 """, (student_id,))
                 row = cur.fetchone()
                 result['attendance'] = row[0] if row else 0
@@ -93,12 +93,13 @@ def export_my_data_csv():
                 if not student_id:
                     return jsonify({"error": "Student profile not found"}), 404
                 
-                # Get marks
+                # Get marks (real schema: subject_id FK, no subject/marks_percentage/grade/exam_date)
                 cur.execute("""
-                    SELECT student_id, subject, marks, marks_percentage, grade, exam_date
-                    FROM marks
-                    WHERE student_id = %s
-                    ORDER BY exam_date DESC
+                    SELECT m.student_id, sub.name, m.marks, m.marks, 'N/A', m.created_at
+                    FROM marks m
+                    JOIN subjects sub ON m.subject_id = sub.id
+                    WHERE m.student_id = %s
+                    ORDER BY m.created_at DESC
                 """, (student_id,))
                 
                 marks_data = []
@@ -152,9 +153,9 @@ def export_my_data_json():
                 if not student_id:
                     return jsonify({"error": "Student profile not found"}), 404
                 
-                # Get comprehensive student data
+                # Get comprehensive student data (real students schema)
                 cur.execute("""
-                    SELECT id, name, email, department, cgpa, status
+                    SELECT id, name, email, department
                     FROM students
                     WHERE id = %s
                 """, (student_id,))
@@ -165,16 +166,17 @@ def export_my_data_json():
                     'name': student_row[1],
                     'email': student_row[2],
                     'department': student_row[3],
-                    'cgpa': student_row[4],
-                    'status': student_row[5]
+                    'cgpa': None,
+                    'status': None
                 }
                 
-                # Get marks
+                # Get marks (real schema: join subjects for names, no percentage/grade columns)
                 cur.execute("""
-                    SELECT subject, marks, marks_percentage, grade, exam_date
-                    FROM marks
-                    WHERE student_id = %s
-                    ORDER BY exam_date DESC
+                    SELECT sub.name, m.marks, m.marks, 'N/A', m.created_at
+                    FROM marks m
+                    JOIN subjects sub ON m.subject_id = sub.id
+                    WHERE m.student_id = %s
+                    ORDER BY m.created_at DESC
                 """, (student_id,))
                 
                 student_data['marks'] = [
@@ -236,7 +238,7 @@ def export_performance_report():
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT id, name, email, department, cgpa
+                    SELECT id, name, email, department
                     FROM students
                     WHERE user_id = %s AND institution_id = %s
                 """, (g.user_id, g.institution_id))
@@ -250,7 +252,7 @@ def export_performance_report():
                     'name': row[1],
                     'email': row[2],
                     'department': row[3],
-                    'cgpa': row[4]
+                    'cgpa': None
                 }
         
         # Generate report
@@ -280,19 +282,22 @@ def export_attendance_csv():
         return jsonify({"error": "Access denied"}), 403
     
     try:
+        institution_id = g.institution_id
         with get_db_connection() as conn:
             with conn.cursor() as cur:
-                # Get attendance data
+                # Get attendance data (tenant-scoped via students + subjects)
                 cur.execute("""
                     SELECT s.id, s.name, sub.name as subject,
                            COUNT(*) as total_classes,
-                           SUM(CASE WHEN a.is_present THEN 1 ELSE 0 END) as present
+                           SUM(CASE WHEN a.status = 'Present' THEN 1 ELSE 0 END) as present
                     FROM attendance a
                     JOIN students s ON a.student_id = s.id
                     JOIN subjects sub ON a.subject_id = sub.id
+                    WHERE (%s IS NULL OR s.institution_id = %s)
+                      AND (%s IS NULL OR sub.institution_id = %s)
                     GROUP BY s.id, s.name, sub.name
                     ORDER BY s.name
-                """)
+                """, (institution_id, institution_id, institution_id, institution_id))
                 
                 attendance_data = [
                     {

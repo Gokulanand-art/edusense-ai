@@ -46,6 +46,7 @@ class UserOperation(View):
 
     def post(self, request):
         form = Operation(request.POST)
+        result = None
 
         #Check if form is valid
         if form.is_valid():
@@ -55,7 +56,7 @@ class UserOperation(View):
             else:
                 result = perform_checkin(form)
 
-        context = {'qResult':result}
+        context = {'qResult':result, 'form': form, 'errors': form.errors}
         return render(request, self.template, context)
 
 

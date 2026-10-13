@@ -181,7 +181,12 @@ def test_get_company_matches_categories():
         }
         
         with patch("services.skills_service.get_student_skills") as mock_skills:
-            mock_skills.return_value = ["Python", "Java", "DSA", "System Design"]
+            mock_skills.return_value = [
+                {"skill_id": 1, "skill_name": "Python", "skill_level": "Advanced"},
+                {"skill_id": 2, "skill_name": "Java", "skill_level": "Intermediate"},
+                {"skill_id": 3, "skill_name": "DSA", "skill_level": "Intermediate"},
+                {"skill_id": 4, "skill_name": "System Design", "skill_level": "Beginner"},
+            ]
             
             matches = get_company_matches_for_student(1)
     
@@ -213,7 +218,10 @@ def test_get_company_matches_with_gaps():
         }
         
         with patch("services.skills_service.get_student_skills") as mock_skills:
-            mock_skills.return_value = ["Java", "SQL"]
+            mock_skills.return_value = [
+                {"skill_id": 1, "skill_name": "Java", "skill_level": "Intermediate"},
+                {"skill_id": 2, "skill_name": "SQL", "skill_level": "Intermediate"},
+            ]
             
             matches = get_company_matches_for_student(2)
     
@@ -290,7 +298,11 @@ def test_company_matching_integration():
         }
         
         with patch("services.skills_service.get_student_skills") as mock_skills:
-            mock_skills.return_value = ["Python", "Java", "DSA"]
+            mock_skills.return_value = [
+                {"skill_id": 1, "skill_name": "Python", "skill_level": "Beginner"},
+                {"skill_id": 2, "skill_name": "Java", "skill_level": "Beginner"},
+                {"skill_id": 3, "skill_name": "DSA", "skill_level": "Beginner"},
+            ]
             
             with get_db_connection() as conn:
                 ensure_companies_table_consistency(conn)

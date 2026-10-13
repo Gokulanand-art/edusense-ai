@@ -323,7 +323,13 @@ def forgot_password():
     data = request.get_json() or {}
     try:
         email = validate_email(data.get("email"))
-        otp = create_and_store_otp(email)
+        institution_code = data.get("institution_code")
+        if not institution_code:
+            return jsonify({"error": "institution_code is required"}), 400
+        institution = get_institution_by_code(institution_code)
+        if institution is None:
+            return jsonify({"error": "Invalid institution_code"}), 400
+        otp = create_and_store_otp(email, institution_id=institution["id"])
         if otp:
             send_otp_email(email, otp)
         # Always return success to prevent email enumeration
@@ -343,11 +349,17 @@ def reset_password():
         email = validate_email(data.get("email"))
         otp = data.get("otp")
         new_password = validate_password(data.get("new_password"))
+        institution_code = data.get("institution_code")
+        if not institution_code:
+            return jsonify({"error": "institution_code is required"}), 400
+        institution = get_institution_by_code(institution_code)
+        if institution is None:
+            return jsonify({"error": "Invalid institution_code"}), 400
 
         if not otp:
             return jsonify({"error": "OTP is required"}), 400
 
-        if not verify_and_use_otp(email, otp):
+        if not verify_and_use_otp(email, otp, institution_id=institution["id"]):
             return jsonify({"error": "Invalid or expired OTP"}), 400
 
         hashed_password = bcrypt.hashpw(
@@ -357,9 +369,11 @@ def reset_password():
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "UPDATE users SET password = %s WHERE LOWER(email) = LOWER(%s)",
-                    (hashed_password, email),
+                    "UPDATE users SET password = %s WHERE LOWER(email) = LOWER(%s) AND institution_id = %s",
+                    (hashed_password, email, institution["id"]),
                 )
+                if cur.rowcount == 0:
+                    return jsonify({"error": "Invalid or expired OTP"}), 400
         return jsonify({"message": "Password has been reset successfully."}), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 400

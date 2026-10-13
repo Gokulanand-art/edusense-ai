@@ -436,7 +436,8 @@ def admin_dashboard_summary():
 
 @admin_bp.route("/students", methods=["GET"])
 @token_required
-def get_students_list():
+@role_required("Admin")
+def get_students_list(current_user):
     """Paginated + filterable student list. Used by placement form search."""
     from services.readiness_service import get_all_scored_students
     try:
@@ -444,7 +445,8 @@ def get_students_list():
         dept = request.args.get("department")
         sort = request.args.get("sort", "desc")
         per  = min(int(request.args.get("per_page", 20)), 100)
-        students = get_all_scored_students(search=q, department=dept, sort_order=sort)
+        students = get_all_scored_students(search=q, department=dept, sort_order=sort,
+            institution_id=None if current_user.get("is_super_admin") else current_user.get("institution_id"))
         return jsonify({"success": True, "data": students[:per], "count": len(students)}), 200
     except Exception as exc:
         logger.exception("get_students_list failed")

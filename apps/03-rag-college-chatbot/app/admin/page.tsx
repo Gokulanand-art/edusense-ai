@@ -36,11 +36,6 @@ export default function AdminPage() {
             </p>
           </div>
 
-          <div className="rounded-xl bg-purple-500/10 border border-purple-500/20 p-3.5 text-xs text-purple-300">
-            <p className="font-semibold mb-1">Demo Administrator Credentials:</p>
-            <code>admin@college.edu</code> / <code>Admin@123</code>
-          </div>
-
           <div className="pt-2">
             <Link
               href="/login?callbackUrl=/admin"

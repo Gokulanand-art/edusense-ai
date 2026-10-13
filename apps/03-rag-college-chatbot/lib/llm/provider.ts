@@ -6,7 +6,11 @@ export type LLMProviderType = "local" | "gemini" | "openai";
 
 /**
  * Unified LLM completion and streaming service.
- * Supports configurable providers with automatic fallback to local offline engine.
+ * Fail closed: an explicitly configured provider must succeed — errors propagate
+ * to the caller. The local offline engine is used only when the configured
+ * provider is 'local'. (NOTE: this function returns a plain string; there is no
+ * response object to carry a providerUsed field without rippling every caller,
+ * so none was added.)
  */
 export async function generateLLMResponse(
   messages: LLMMessage[],
@@ -15,40 +19,31 @@ export async function generateLLMResponse(
   const provider = (process.env.LLM_PROVIDER || "local").toLowerCase() as LLMProviderType;
   const apiKey = process.env.LLM_API_KEY;
 
-  if (provider === "gemini" && apiKey && !apiKey.startsWith("local-")) {
-    try {
-      const res = await streamGeminiChat(
-        messages,
-        apiKey,
-        process.env.LLM_MODEL || "gemini-1.5-flash",
-        onChunk
-      );
-      if (res && res.trim().length > 0) {
-        return res;
-      }
-    } catch (err) {
-      console.warn("Gemini LLM call failed or timed out, falling back to local reasoning engine:", (err as any)?.message || err);
-    }
+  if (provider === "gemini") {
+    return await streamGeminiChat(
+      messages,
+      apiKey,
+      process.env.LLM_MODEL || "gemini-1.5-flash",
+      onChunk
+    );
   }
 
-  if (provider === "openai" && apiKey && !apiKey.startsWith("local-")) {
-    try {
-      const res = await streamOpenAIChat(
-        messages,
-        apiKey,
-        process.env.LLM_MODEL || "gpt-4o-mini",
-        onChunk
-      );
-      if (res && res.trim().length > 0) {
-        return res;
-      }
-    } catch (err) {
-      console.warn("OpenAI LLM call failed or timed out, falling back to local reasoning engine:", (err as any)?.message || err);
-    }
+  if (provider === "openai") {
+    return await streamOpenAIChat(
+      messages,
+      apiKey,
+      process.env.LLM_MODEL || "gpt-4o-mini",
+      onChunk
+    );
   }
 
-  // Fallback to local offline reasoning engine
-  const localResp = generateLocalLLMResponse(messages);
-  if (onChunk) onChunk(localResp);
-  return localResp;
+  if (provider === "local") {
+    const localResp = generateLocalLLMResponse(messages);
+    if (onChunk) onChunk(localResp);
+    return localResp;
+  }
+
+  throw new Error(
+    `Unknown LLM_PROVIDER "${provider}". Expected "local", "gemini", or "openai".`
+  );
 }

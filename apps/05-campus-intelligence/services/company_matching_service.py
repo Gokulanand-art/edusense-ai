@@ -264,8 +264,10 @@ def calculate_company_match_score(student_metrics: dict, company_requirements: d
     attendance_match = min(100, (student_attendance / req_attendance) * 100) if req_attendance > 0 else 100
     mock_match = min(100, (student_mock / req_mock) * 100) if req_mock > 0 else 100
     
-    # Skills matching
-    student_skill_names = [s.lower() for s in student_skills]
+    # Skills matching (get_student_skills returns list[dict] with skill_name key)
+    def _skill_name(s):
+        return s["skill_name"] if isinstance(s, dict) else s
+    student_skill_names = [str(_skill_name(s)).lower() for s in student_skills]
     matched_skills = [s for s in req_skills if s.lower() in student_skill_names]
     skills_match = (len(matched_skills) / len(req_skills) * 100) if req_skills else 100
     
@@ -307,7 +309,7 @@ def calculate_company_match_score(student_metrics: dict, company_requirements: d
         gaps.append({
             "type": "skills",
             "missing": missing_skills,
-            "have": [s.get("name") for s in student_skills if isinstance(s, dict)],
+            "have": [_skill_name(s) for s in student_skills],
         })
     
     return {

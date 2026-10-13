@@ -21,7 +21,7 @@ days = {
 
 
 def daterange(start_date, end_date):
-    for n in range(int((end_date - start_date).days)):
+    for n in range(int((end_date - start_date).days + 1)):
         yield start_date + timedelta(n)
 
 
@@ -100,11 +100,14 @@ class AttendanceClassAdmin(admin.ModelAdmin):
     def get_urls(self):
         urls = super().get_urls()
         my_urls = [
-            path('reset_attd/', self.reset_attd, name='reset_attd'),
+            path('reset_attd/', self.admin_site.admin_view(self.reset_attd), name='reset_attd'),
         ]
         return my_urls + urls
 
     def reset_attd(self, request):
+        if not request.user.is_superuser:
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied
 
         start_date = datetime.strptime(request.POST['startdate'], '%Y-%m-%d').date()
         end_date = datetime.strptime(request.POST['enddate'], '%Y-%m-%d').date()

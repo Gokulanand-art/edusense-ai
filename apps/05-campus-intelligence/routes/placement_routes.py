@@ -111,15 +111,16 @@ def create_outcome():
             notes=data.get("notes"),
         )
         record_audit_event(
-            action="placement_outcome_recorded",
+            "placement_outcome_recorded",
             actor_user_id=g.user["id"],
-            target_resource=f"student:{data['student_id']}",
-            details={
+            institution_id=g.institution_id,
+            entity_type="student",
+            entity_id=int(data["student_id"]),
+            metadata={
                 "company": data["company_name"],
                 "package_lpa": package,
                 "status": data.get("status", "offered"),
             },
-            institution_id=g.institution_id,
         )
         return jsonify({"success": True, "data": result}), 201
     except Exception as exc:

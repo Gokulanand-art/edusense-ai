@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponseBadRequest
+from django.utils.dateparse import parse_date
 from .models import Dept, Class, Student, Attendance, Course, Teacher, Assign, AttendanceTotal, time_slots, \
     DAYS_OF_WEEK, AssignTime, AttendanceClass, StudentCourse, Marks, MarksClass
 from django.urls import reverse
@@ -117,7 +118,9 @@ def confirm(request, ass_c_id):
     cr = ass.course
     cl = ass.class_id
     for i, s in enumerate(cl.student_set.all()):
-        status = request.POST[s.USN]
+        status = request.POST.get(s.USN)
+        if status is None:
+            return HttpResponseBadRequest('Missing attendance status for student %s' % s.USN)
         if status == 'present':
             status = 'True'
         else:
@@ -171,17 +174,24 @@ def e_confirm(request, assign_id):
     ass = get_object_or_404(Assign, id=assign_id)
     cr = ass.course
     cl = ass.class_id
-    assc = ass.attendanceclass_set.create(status=1, date=request.POST['date'])
+    date_str = request.POST.get('date')
+    if not date_str:
+        return HttpResponseBadRequest('Missing date')
+    parsed_date = parse_date(date_str)
+    if parsed_date is None:
+        return HttpResponseBadRequest('Invalid date')
+    assc = ass.attendanceclass_set.create(status=1, date=parsed_date)
     assc.save()
 
     for i, s in enumerate(cl.student_set.all()):
-        status = request.POST[s.USN]
+        status = request.POST.get(s.USN)
+        if status is None:
+            return HttpResponseBadRequest('Missing attendance status for student %s' % s.USN)
         if status == 'present':
             status = 'True'
         else:
             status = 'False'
-        date = request.POST['date']
-        a = Attendance(course=cr, student=s, status=status, date=date, attendanceclass=assc)
+        a = Attendance(course=cr, student=s, status=status, date=parsed_date, attendanceclass=assc)
         a.save()
 
     return HttpResponseRedirect(reverse('t_clas', args=(ass.teacher_id, 1)))
@@ -273,12 +283,12 @@ def marks_list(request, stud_id):
         except StudentCourse.DoesNotExist:
             sc = StudentCourse(student=stud, course=ass.course)
             sc.save()
-            sc.marks_set.create(type='I', name='Internal test 1')
-            sc.marks_set.create(type='I', name='Internal test 2')
-            sc.marks_set.create(type='I', name='Internal test 3')
-            sc.marks_set.create(type='E', name='Event 1')
-            sc.marks_set.create(type='E', name='Event 2')
-            sc.marks_set.create(type='S', name='Semester End Exam')
+            sc.marks_set.create(name='Internal test 1')
+            sc.marks_set.create(name='Internal test 2')
+            sc.marks_set.create(name='Internal test 3')
+            sc.marks_set.create(name='Event 1')
+            sc.marks_set.create(name='Event 2')
+            sc.marks_set.create(name='Semester End Exam')
         sc_list.append(sc)
 
     return render(request, 'info/marks_list.html', {'sc_list': sc_list})
@@ -314,7 +324,13 @@ def marks_confirm(request, marks_c_id):
     cr = ass.course
     cl = ass.class_id
     for s in cl.student_set.all():
-        mark = request.POST[s.USN]
+        raw_mark = request.POST.get(s.USN)
+        if raw_mark is None or raw_mark == '':
+            return HttpResponseBadRequest('Missing mark for student %s' % s.USN)
+        try:
+            mark = int(raw_mark)
+        except (TypeError, ValueError):
+            return HttpResponseBadRequest('Invalid mark for student %s' % s.USN)
         sc = StudentCourse.objects.get(course=cr, student=s)
         m = sc.marks_set.get(name=mc.name)
         m.marks1 = mark

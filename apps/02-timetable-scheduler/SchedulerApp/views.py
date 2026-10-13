@@ -112,15 +112,21 @@ class Schedule:
         return self._fitness
 
     def addCourse(self, data, course, courses, dept, section):
+        meeting_times = data.get_meetingTimes()
+        rooms = data.get_rooms()
+        if len(meeting_times) == 0 or len(rooms) == 0:
+            return
         newClass = Class(dept, section.section_id, course)
 
         newClass.set_meetingTime(
-            data.get_meetingTimes()[random.randrange(0, len(data.get_meetingTimes()))])
+            meeting_times[random.randrange(0, len(meeting_times))])
 
         newClass.set_room(
-            data.get_rooms()[random.randrange(0, len(data.get_rooms()))])
+            rooms[random.randrange(0, len(rooms))])
 
         crs_inst = course.instructors.all()
+        if len(crs_inst) == 0:
+            return
         newClass.set_instructor(
             crs_inst[random.randrange(0, len(crs_inst))])
 
@@ -136,6 +142,8 @@ class Schedule:
                 n = len(data.get_meetingTimes())
 
             courses = dept.courses.all()
+            if len(courses) == 0:
+                continue
             for course in courses:
                 for i in range(n // len(courses)):
                     self.addCourse(data, course, courses, dept, section)
@@ -260,6 +268,18 @@ def apiterminateGens(request):
 def timetable(request):
     global data
     data = Data()
+    if not data.get_rooms().exists():
+        return HttpResponse('Cannot generate timetable: no rooms available.')
+    if not data.get_meetingTimes().exists():
+        return HttpResponse('Cannot generate timetable: no meeting times available.')
+    if not data.get_instructors().exists():
+        return HttpResponse('Cannot generate timetable: no instructors available.')
+    if not data.get_courses().exists():
+        return HttpResponse('Cannot generate timetable: no courses available.')
+    if not data.get_sections().exists():
+        return HttpResponse('Cannot generate timetable: no sections available.')
+    if Course.objects.filter(instructors__isnull=True).exists():
+        return HttpResponse('Cannot generate timetable: a course has no instructors assigned.')
     population = Population(POPULATION_SIZE)
     VARS['generationNum'] = 0
     VARS['terminateGens'] = False
@@ -321,6 +341,7 @@ def instructorDelete(request, pk):
     if request.method == 'POST':
         inst.delete()
         return redirect('instructorEdit')
+    return redirect('instructorEdit')
 
 
 @login_required
@@ -346,6 +367,7 @@ def roomDelete(request, pk):
     if request.method == 'POST':
         rm.delete()
         return redirect('roomEdit')
+    return redirect('roomEdit')
 
 
 @login_required
@@ -373,6 +395,7 @@ def meetingTimeDelete(request, pk):
     if request.method == 'POST':
         mt.delete()
         return redirect('meetingTimeEdit')
+    return redirect('meetingTimeEdit')
 
 
 @login_required
@@ -407,6 +430,7 @@ def courseDelete(request, pk):
     if request.method == 'POST':
         crs.delete()
         return redirect('courseEdit')
+    return redirect('courseEdit')
 
 
 @login_required
@@ -441,6 +465,7 @@ def departmentDelete(request, pk):
     if request.method == 'POST':
         dept.delete()
         return redirect('departmentEdit')
+    return redirect('departmentEdit')
 
 
 @login_required
@@ -466,6 +491,7 @@ def sectionDelete(request, pk):
     if request.method == 'POST':
         sec.delete()
         return redirect('sectionEdit')
+    return redirect('sectionEdit')
 
 
 

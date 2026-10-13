@@ -14,6 +14,17 @@ export interface ChunkerOptions {
 }
 
 /**
+ * Documented defaults (see .env.example: CHUNK_SIZE=700, CHUNK_OVERLAP=100).
+ */
+const DEFAULT_CHUNK_SIZE = 700;
+const DEFAULT_CHUNK_OVERLAP = 100;
+
+function parseEnvInt(raw: string | undefined, fallback: number): number {
+  const parsed = parseInt(raw ?? "", 10);
+  return Number.isNaN(parsed) ? fallback : parsed;
+}
+
+/**
  * Estimates token count for text (~4 characters per token average in English).
  */
 export function estimateTokens(text: string): number {
@@ -36,14 +47,32 @@ export function chunkText(
 
   const chunkSizeTokens =
     options?.chunkSize ||
-    parseInt(process.env.CHUNK_SIZE || "700", 10);
+    parseEnvInt(process.env.CHUNK_SIZE, DEFAULT_CHUNK_SIZE);
   const chunkOverlapTokens =
-    options?.chunkOverlap ||
-    parseInt(process.env.CHUNK_OVERLAP || "100", 10);
+    options?.chunkOverlap ??
+    parseEnvInt(process.env.CHUNK_OVERLAP, DEFAULT_CHUNK_OVERLAP);
+
+  // Validate sliding-window geometry: 0 <= overlap < size. Without this, an
+  // overlap >= size collapses the window step to Math.max(1, ...) below and
+  // degrades into ~1-char stepping over large paragraphs.
+  if (!Number.isFinite(chunkSizeTokens) || chunkSizeTokens <= 0) {
+    throw new Error(
+      `Invalid chunkSize (${chunkSizeTokens}): must be a positive integer.`
+    );
+  }
+  const safeOverlapTokens =
+    Number.isFinite(chunkOverlapTokens) && chunkOverlapTokens >= 0
+      ? chunkOverlapTokens
+      : DEFAULT_CHUNK_OVERLAP;
+  if (safeOverlapTokens >= chunkSizeTokens) {
+    throw new Error(
+      `Invalid chunkOverlap (${safeOverlapTokens}): must satisfy 0 <= overlap < size (${chunkSizeTokens}).`
+    );
+  }
 
   // Convert token sizes to approximate character limits
   const chunkSizeChars = chunkSizeTokens * 4;
-  const chunkOverlapChars = chunkOverlapTokens * 4;
+  const chunkOverlapChars = safeOverlapTokens * 4;
   const stepSizeChars = Math.max(100, chunkSizeChars - chunkOverlapChars);
 
   const paragraphs = cleanedText.split(/\n\n+/);
