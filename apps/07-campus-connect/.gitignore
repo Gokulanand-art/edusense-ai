@@ -53,3 +53,8 @@ Thumbs.db
 
 # Vercel / deployment
 .vercel
+
+# OpenNext / Cloudflare build output
+.open-next/
+.wrangler/
+.dev.vars

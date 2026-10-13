@@ -9,6 +9,7 @@ import { SESSION_COOKIE } from '@/lib/auth'
  * without JavaScript, which is the only reason the logout control is in a form.
  */
 export async function signOut() {
-  cookies().delete(SESSION_COOKIE)
+  const jar = await cookies()
+  jar.delete(SESSION_COOKIE)
   redirect('/login')
 }

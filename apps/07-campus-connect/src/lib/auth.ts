@@ -67,7 +67,8 @@ export function verifySessionToken(token: string | undefined): { userId: string 
 }
 
 export async function setSessionCookie(userId: string) {
-  cookies().set(SESSION_COOKIE, createSessionToken(userId), {
+  const jar = await cookies();
+  jar.set(SESSION_COOKIE, createSessionToken(userId), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -76,8 +77,9 @@ export async function setSessionCookie(userId: string) {
   });
 }
 
-export function clearSessionCookie() {
-  cookies().set(SESSION_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
+export async function clearSessionCookie() {
+  const jar = await cookies();
+  jar.set(SESSION_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
 }
 
 /* -------------------------------------------------------------------- users */
@@ -104,7 +106,7 @@ export interface SessionUser {
 
 /** Resolve the current user from the cookie. Role comes from the DB, not the token. */
 export async function getCurrentUser(q?: QueryFn): Promise<SessionUser | null> {
-  const token = cookies().get(SESSION_COOKIE)?.value;
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
   const verified = verifySessionToken(token);
   if (!verified) return null;
 

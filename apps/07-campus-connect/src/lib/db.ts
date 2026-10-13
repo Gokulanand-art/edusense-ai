@@ -77,12 +77,72 @@ async function createPgliteAdapter(): Promise<DbAdapter> {
   };
 }
 
+/**
+ * Resolve how to reach Postgres, and which driver to use.
+ *
+ * Cloudflare Workers cannot open raw TCP sockets, so `pg` there is unreliable —
+ * it failed intermittently with worker error 1101. Neon's serverless driver
+ * speaks the Postgres wire protocol over a WebSocket instead, which Workers
+ * supports natively, so it is used on Workers and `pg` everywhere else.
+ *
+ * The Workers connection string is supplied as a Worker *secret*
+ * (DATABASE_URL), never baked into the bundle.
+ */
+async function resolvePgConnection(): Promise<{
+  connectionString: string;
+  driver: "neon" | "pg";
+}> {
+  const onWorkers =
+    typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers";
+  if (onWorkers) {
+    return { connectionString: process.env.DATABASE_URL ?? "", driver: "neon" };
+  }
+  return { connectionString: process.env.DATABASE_URL ?? "", driver: "pg" };
+}
+
 async function createPgAdapter(): Promise<DbAdapter> {
-  const { Pool } = await import("pg");
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    max: 8,
-    connectionTimeoutMillis: 8000,
+  const { connectionString, driver } = await resolvePgConnection();
+  const onWorkers = driver === "neon";
+
+  /**
+   * The two pools expose the same query/connect/release/end surface but have
+   * unrelated TypeScript types, so this adapter talks to the small structural
+   * subset it actually uses rather than to either package's Pool type.
+   */
+  interface DriverClient {
+    query(
+      text: string,
+      params?: unknown[],
+    ): Promise<{ rows: unknown[]; rowCount?: number | null }>;
+    release(destroy?: boolean): void;
+  }
+  interface DriverPool {
+    query(text: string, params?: unknown[]): Promise<{ rows: unknown[]; rowCount?: number | null }>;
+    connect(): Promise<DriverClient>;
+    end(): Promise<void>;
+    on(event: string, cb: () => void): void;
+  }
+
+  // node-postgres on Node; Neon's WebSocket driver on Workers.
+  type PoolCtor = new (cfg: {
+    connectionString: string;
+    max: number;
+    connectionTimeoutMillis: number;
+    idleTimeoutMillis: number;
+    keepAlive: boolean;
+  }) => DriverPool;
+
+  // node-postgres on Node; Neon's WebSocket driver on Workers.
+  const PoolImpl = onWorkers
+    ? ((await import("@neondatabase/serverless")).Pool as unknown as PoolCtor)
+    : ((await import("pg")).Pool as unknown as PoolCtor);
+
+  // A WebSocket session is far more expensive than a socket, so keep the fan-out
+  // small; the driver multiplexes queries over it.
+  const pool = new PoolImpl({
+    connectionString,
+    max: onWorkers ? 2 : 8,
+    connectionTimeoutMillis: 15_000,
     idleTimeoutMillis: 30_000,
     keepAlive: true,
   });
@@ -111,7 +171,7 @@ async function createPgAdapter(): Promise<DbAdapter> {
 
   const transaction: DbAdapter["transaction"] = async <T>(fn: (q: QueryFn) => Promise<T>) => {
     for (let attempt = 0; ; attempt++) {
-      let client: import("pg").PoolClient | undefined;
+      let client: DriverClient | undefined;
       try {
         client = await pool.connect();
         await client.query("BEGIN");
@@ -187,13 +247,32 @@ type GlobalWithDb = typeof globalThis & { [GLOBAL_DB_KEY]?: Promise<DbAdapter> }
 export async function getDb(): Promise<DbAdapter> {
   const g = globalThis as GlobalWithDb;
   if (!g[GLOBAL_DB_KEY]) {
-    g[GLOBAL_DB_KEY] = (async () => {
-      const adapter = process.env.DATABASE_URL
-        ? await createPgAdapter()
-        : await createPgliteAdapter();
-      await runMigrations(adapter);
+    const pending = (async () => {
+      // pglite needs a writable filesystem, which Workers do not have, so on
+      // Workers the real database is reached over Neon's WebSocket driver.
+      const onWorkers =
+        typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers";
+      const adapter =
+        onWorkers || process.env.DATABASE_URL
+          ? await createPgAdapter()
+          : await createPgliteAdapter();
+      // Applying seven migrations on every Workers cold start burned enough CPU
+      // to get the isolate killed (error 1101) before the first request could
+      // finish. The hosted database is migrated once by `npm run db:seed`, so
+      // the app only verifies the schema is present rather than changing it.
+      if (!onWorkers) await runMigrations(adapter);
       return adapter;
     })();
+
+    // This promise is cached on globalThis, so the request that triggered it may
+    // be gone by the time a database connection is refused. An unhandled
+    // rejection like that kills the whole isolate — Workers reports it as
+    // error 1101 and no route handler's try/catch can see it. Marking the
+    // promise handled here keeps the failure to whoever awaits it next, while
+    // still letting that caller observe the real error.
+    void pending.catch(() => {});
+
+    g[GLOBAL_DB_KEY] = pending;
   }
   return g[GLOBAL_DB_KEY]!;
 }

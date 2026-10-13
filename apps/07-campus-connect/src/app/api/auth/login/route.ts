@@ -64,18 +64,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const identifier = await resolveIdentifier(body.email ?? "", body.roll);
-  const user = await authenticate(identifier, body.password ?? "");
+  try {
+    const identifier = await resolveIdentifier(body.email ?? "", body.roll);
+    const user = await authenticate(identifier, body.password ?? "");
 
-  if (!user) {
-    // Deliberately vague: never reveal whether the identifier exists.
-    return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+    if (!user) {
+      // Deliberately vague: never reveal whether the identifier exists.
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+    }
+
+    await setSessionCookie(user.id);
+    return NextResponse.json({
+      ok: true,
+      user: { id: user.id, name: `${user.firstName} ${user.lastName}`, role: user.role },
+      redirect: roleHome(user.role),
+    });
+  } catch (err) {
+    // A database or session failure must not surface as an unhandled worker
+    // exception. Log the real cause server-side and report it as unavailable.
+    console.error("[login] failed", err);
+    const detail =
+      process.env.NODE_ENV === "production"
+        ? undefined
+        : err instanceof Error
+          ? `${err.name}: ${err.message}`
+          : String(err);
+    return NextResponse.json(
+      { error: "Sign-in is temporarily unavailable. Please try again.", detail },
+      { status: 503 },
+    );
   }
-
-  await setSessionCookie(user.id);
-  return NextResponse.json({
-    ok: true,
-    user: { id: user.id, name: `${user.firstName} ${user.lastName}`, role: user.role },
-    redirect: roleHome(user.role),
-  });
 }

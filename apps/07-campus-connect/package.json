@@ -11,10 +11,13 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:reset": "rm -rf ./data/campus-connect && tsx scripts/seed.ts",
     "import:csbs": "tsx scripts/import-csbs.ts",
-    "db:reset:csbs": "rm -rf ./data/campus-connect && tsx scripts/seed.ts && tsx scripts/import-csbs.ts --file \"${CSBS_FILE:?set CSBS_FILE to the xlsx path}\" --reset"
+    "db:reset:csbs": "rm -rf ./data/campus-connect && tsx scripts/seed.ts && tsx scripts/import-csbs.ts --file \"${CSBS_FILE:?set CSBS_FILE to the xlsx path}\" --reset",
+    "cf:build": "mv .env.local .env.local.bak && (CF_BUILD=1 npx opennextjs-cloudflare build; rc=$?; mv .env.local.bak .env.local; exit $rc)",
+    "cf:deploy": "npm run cf:build && wrangler deploy"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.4",
+    "@neondatabase/serverless": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-avatar": "^1.0.4",
     "@radix-ui/react-dialog": "^1.0.5",
@@ -32,16 +35,17 @@
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "jszip": "^3.10.2",
-    "lucide-react": "^0.378.0",
-    "next": "14.2.3",
+    "lucide-react": "^1.55.0",
+    "next": "^15.5.27",
     "pg": "^8.11.5",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "recharts": "^2.12.7",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.20.10",
     "@types/node": "^20.12.12",
     "@types/pg": "^8.11.5",
     "@types/react": "^18.3.2",
