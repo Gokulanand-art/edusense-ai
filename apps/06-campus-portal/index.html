@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard - EduSense</title>
+<link rel="stylesheet" href="campus.css">
+</head>
+<body data-page="dashboard">
+<div class="shell">
+  <nav class="side" id="side" aria-label="Primary">
+    <div class="profile"><span class="pfp">--</span><b><span data-profile-name>Staff</span><small data-profile-sub>Admin · staff login</small></b></div>
+
+    <a href="index.html" data-nav="dashboard"><i>▦</i>Dashboard</a>
+    <a href="students.html" data-nav="students"><i>◉</i>Students</a>
+    <a href="attendance.html" data-nav="attendance"><i>◷</i>Attendance</a>
+    <small class="sec">Academics</small>
+    <a href="lms.html" data-nav="lms"><i>▤</i>Courses</a>
+    <a href="analytics.html" data-nav="analytics"><i>◩</i>Grades</a>
+    <a href="library.html" data-nav="library"><i>▧</i>Library</a>
+    <small class="sec">System</small>
+    <a href="access.html" data-nav="access" data-for="admin hod"><i>⬣</i>Roles</a>
+    <a href="settings.html" data-nav="settings" data-for="admin"><i>⚙</i>Settings</a>
+    <div class="foot">Static layout · plug data in <b>Settings</b></div>
+  </nav>
+  <div class="main">
+    <div class="topbar">
+      <button class="btn" id="menuBtn">☰</button>
+      <div><h1 data-greet data-greet-admin="Good morning" data-greet-hod="Good morning, HOD" data-greet-student="Good morning">Good morning</h1><p class="day">Academic year 2026–27 · Term 1</p></div>
+      <div class="searchbar">
+        <input type="search" placeholder="Search courses, assignments…" aria-label="Search">
+        <button class="bell" aria-label="Notifications">🔔</button>
+      </div>
+    </div>
+    <!-- ADMIN + HOD overview -->
+    <div data-for="admin hod">
+      <section class="statgrid" aria-label="Overview">
+        <div class="stat"><small data-for="admin">Enrolled students</small><small data-for="hod" class="hide">Department students</small><div class="empty" data-slot="kpi-total-students" style="margin:8px 0 0"><b>—</b><span>Awaiting import</span></div></div>
+        <div class="stat"><small>Average score</small><div class="empty" data-slot="kpi-avg-score" style="margin:8px 0 0"><b>—</b><span>Awaiting assessments</span></div></div>
+        <div class="stat"><small>Attendance today</small><div class="empty" data-slot="kpi-attendance-today" style="margin:8px 0 0"><b>—</b><span>Awaiting marking</span></div></div>
+        <div class="stat"><small data-for="admin">At-risk students</small><small data-for="hod" class="hide">Pending approvals</small><div class="empty" data-slot="kpi-at-risk" style="margin:8px 0 0"><b>—</b><span>Awaiting scoring</span></div></div>
+      </section>
+      <div class="cols2">
+        <section class="card"><div class="cardhead"><h3 data-for="admin">Upcoming Assignments</h3><h3 data-for="hod" class="hide">Leave Approvals</h3><a href="lms.html" data-for="admin">View All →</a><a href="attendance.html" data-for="hod" class="hide">View All →</a></div>
+          <div class="empty" data-slot="dash-col-a"><b>Nothing here yet</b><span data-for="admin">Due work appears here after LMS sync</span><span data-for="hod" class="hide">Leave requests from faculty appear here</span></div></section>
+        <section class="card"><div class="cardhead"><h3 data-for="admin">Recent Grades</h3><h3 data-for="hod" class="hide">Department Notices</h3><a href="analytics.html" data-for="admin">View All →</a><a href="access.html" data-for="hod" class="hide">View All →</a></div>
+          <div class="empty" data-slot="dash-col-b"><b>Nothing here yet</b><span data-for="admin">Published marks appear here</span><span data-for="hod" class="hide">Circulars for your department appear here</span></div></section>
+      </div>
+    </div>
+    <!-- STUDENT overview -->
+    <div data-for="student" class="hide">
+      <section class="statgrid" aria-label="My overview">
+        <div class="stat"><small>My attendance</small><div class="empty" data-slot="my-attendance" style="margin:8px 0 0"><b>—</b><span>After first marking</span></div></div>
+        <div class="stat"><small>My average</small><div class="empty" data-slot="my-average" style="margin:8px 0 0"><b>—</b><span>After first grading</span></div></div>
+        <div class="stat"><small>Pending work</small><div class="empty" data-slot="my-pending" style="margin:8px 0 0"><b>—</b><span>After LMS sync</span></div></div>
+        <div class="stat"><small>Books due</small><div class="empty" data-slot="my-dues" style="margin:8px 0 0"><b>—</b><span>After library sync</span></div></div>
+      </section>
+      <div class="cols2">
+        <section class="card"><div class="cardhead"><h3>My Assignments</h3><a href="lms.html">View All →</a></div>
+          <div class="empty" data-slot="my-assignments"><b>No assignments yet</b><span>Due work with priority tags appears here</span></div></section>
+        <section class="card"><div class="cardhead"><h3>My Grades</h3><a href="analytics.html">View All →</a></div>
+          <div class="empty" data-slot="my-grades"><b>No grades yet</b><span>Subjects with grade chips and bars appear here</span></div></section>
+      </div>
+      <section class="card"><div class="cardhead"><h3>My Schedule Today</h3><a href="attendance.html">View All →</a></div>
+        <div class="empty" data-slot="my-schedule"><b>No classes listed</b><span>Timetable entries appear here</span></div></section>
+    </div>
+    <footer>Static campus layout · no sample data — connect sources in Settings.</footer>
+  </div>
+</div>
+<script src="campus.js"></script>
+</body>
+</html>

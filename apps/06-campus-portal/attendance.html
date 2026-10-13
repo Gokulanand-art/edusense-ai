@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attendance - EduSense</title>
+<link rel="stylesheet" href="campus.css">
+</head>
+<body data-page="attendance">
+<div class="shell">
+  <nav class="side" id="side" aria-label="Primary">
+    <div class="profile"><span class="pfp">--</span><b><span data-profile-name>Staff</span><small data-profile-sub>Admin · staff login</small></b></div>
+
+    <a href="index.html" data-nav="dashboard"><i>▦</i>Dashboard</a>
+    <a href="students.html" data-nav="students"><i>◉</i>Students</a>
+    <a href="attendance.html" data-nav="attendance"><i>◷</i>Attendance</a>
+    <small class="sec">Academics</small>
+    <a href="lms.html" data-nav="lms"><i>▤</i>Courses</a>
+    <a href="analytics.html" data-nav="analytics"><i>◩</i>Grades</a>
+    <a href="library.html" data-nav="library"><i>▧</i>Library</a>
+    <small class="sec">System</small>
+    <a href="access.html" data-nav="access" data-for="admin hod"><i>⬣</i>Roles</a>
+    <a href="settings.html" data-nav="settings" data-for="admin"><i>⚙</i>Settings</a>
+    <div class="foot">Static layout · plug data in <b>Settings</b></div>
+  </nav>
+  <div class="main">
+    <div class="topbar">
+      <button class="btn" id="menuBtn">☰</button>
+      <div><h1 data-for="admin hod">Attendance</h1><h1 data-for="student" class="hide">My Attendance</h1>
+      <p class="day" data-for="admin hod">Daily marking and history</p><p class="day" data-for="student" class="hide">Your record · marked by class teacher</p></div>
+      <div class="searchbar" data-for="admin hod">
+        <select aria-label="Class"><option>Select class…</option></select>
+        <select aria-label="Range"><option>Today</option><option>This week</option></select>
+      </div>
+    </div>
+    <div data-for="admin hod">
+      <section class="card">
+        <div class="cardhead"><h3>Mark Today</h3><a href="students.html">Roster →</a></div>
+        <div class="empty" data-slot="attendance-marking"><b>No class selected</b><span>Pick a class above — present/absent toggles load here</span></div>
+      </section>
+      <div class="cols2">
+        <section class="card"><div class="cardhead"><h3>This Week</h3></div>
+          <div class="empty" data-slot="chart-attendance-trend"><b>No data yet</b><span>Trend bars appear after first sync</span></div></section>
+        <section class="card"><div class="cardhead"><h3>By Class</h3></div>
+          <table><thead><tr><th>Class</th><th>Present</th><th>%</th></tr></thead>
+          <tbody><tr><td colspan="3"><div class="empty" data-slot="table-attendance-summary"><b>No records</b><span>Mark attendance to fill this</span></div></td></tr></tbody></table></section>
+      </div>
+    </div>
+    <div data-for="student" class="hide">
+      <section class="card"><div class="cardhead"><h3>My Month</h3></div>
+        <div class="empty" data-slot="my-attendance-detail"><b>—</b><span>Your percentage and streak appear after first marking</span></div></section>
+      <section class="card"><div class="cardhead"><h3>Month-wise</h3></div>
+        <table><thead><tr><th>Month</th><th>Present</th><th>Total</th><th>%</th></tr></thead>
+        <tbody><tr><td colspan="4"><div class="empty" data-slot="my-attendance-table"><b>No records</b><span>Monthly rows appear here</span></div></td></tr></tbody></table></section>
+      <section class="card"><div class="cardhead"><h3>Apply Leave</h3></div>
+        <div class="empty" data-slot="leave-apply"><b>—</b><span>Leave form activates once records exist</span></div>
+        <div class="btnrow"><button class="btn primary" disabled>Apply (needs data)</button></div></section>
+    </div>
+    <footer><a href="index.html" style="color:#2563eb">← Dashboard</a> · Static layout · no sample data.</footer>
+  </div>
+</div>
+<script src="campus.js"></script>
+</body>
+</html>

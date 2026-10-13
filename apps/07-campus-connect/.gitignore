@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js build output
+.next/
+out/
+next-env.d.ts
+
+# ---------------------------------------------------------------------------
+# Local database — contains the entire student register in cleartext.
+# NEVER commit this. Recreate with: npm run db:reset
+# ---------------------------------------------------------------------------
+data/
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+.pgdata/
+
+# Generated credential listing — real names and login IDs. Never commit.
+CREDENTIALS.txt
+
+# Real data files. The cohort register is personal data and must stay local.
+*.xlsx
+*.xls
+*.csv
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# Vercel / deployment
+.vercel

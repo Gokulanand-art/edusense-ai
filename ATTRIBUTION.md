@@ -29,3 +29,15 @@ All rights remain with original authors.
    - License: MIT (see apps/05-campus-intelligence/LICENSE)
 
 Imported 2026-10-12 via shallow clone (--depth 1), binaries (db.sqlite3, __pycache__) excluded.
+
+---
+
+## 07 — Campus Connect
+
+Original work; no upstream repository was imported. See
+`apps/07-campus-connect/README.md` for what it does and how to run it.
+
+Note on data: this app can import a real placement register (student names, roll
+numbers, login IDs). No such file is committed here. The spreadsheet, the local
+database (`./data/`) and the generated credential listing are all excluded by
+`.gitignore`.
